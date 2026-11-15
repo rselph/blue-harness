@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/seifheakal/blue_team/actions/workflows/verify.yml"><img src="https://github.com/seifheakal/blue_team/actions/workflows/verify.yml/badge.svg" alt="verify status"></a>
+  <a href="https://github.com/seifheakal/blue-harness/actions/workflows/verify.yml"><img src="https://github.com/seifheakal/blue-harness/actions/workflows/verify.yml/badge.svg" alt="verify status"></a>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 ## Quickstart
 
 ```bash
-git clone https://github.com/seifheakal/blue_team && cd blue_team
+git clone https://github.com/seifheakal/blue-harness && cd blue-harness
 make demo      # audit a sample build, show its hardening plan, then PROVE every defense fires
 make verify    # run every check and print one posture summary
 ```

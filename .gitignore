@@ -65,3 +65,6 @@ harness/crackme/secret.local.txt
 # private launch/marketing plan (not shipped)
 LAUNCH.md
 MRK-PROMPT.md
+
+# launch video project (Remotion) + rendered media, not shipped
+launch/

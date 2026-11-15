@@ -7,8 +7,8 @@ Thanks for looking at Carapace. Contributions are welcome, and small focused cha
 You need Linux or WSL with `python3`, `make`, and `gcc`.
 
 ```sh
-git clone https://github.com/seifheakal/blue_team.git
-cd blue_team
+git clone https://github.com/seifheakal/blue-harness.git
+cd blue-harness
 make demo      # measure a sample build, then prove the hardening fires
 make verify    # run every verify slice and print one posture summary
 ```
