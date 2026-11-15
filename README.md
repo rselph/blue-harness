@@ -18,10 +18,10 @@
 
 ---
 
-<!-- TODO: replace with a real 8-second demo GIF: AI agent cracks the plain build, then fails on the hardened build -->
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="Carapace demo: an AI agent cracks the unhardened build, then fails on the hardened one">
+  <img src="docs/assets/demo.gif" alt="Carapace demo: a plain build audits at 84/100 (wide open); the guarded build is hardened in one command, re-audits at 40/100 (partially hardened), and still runs" width="860">
 </p>
+<p align="center"><sub>Recorded with <a href="docs/assets/demo.tape">docs/assets/demo.tape</a>. Real output, nothing staged.</sub></p>
 
 ## Quickstart
 

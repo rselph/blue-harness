@@ -1,52 +1,68 @@
-# demo.tape — reproducible README demo GIF for blue-harness (Carapace)
+# demo.tape: reproducible README demo GIF for blue-harness (Carapace)
 #
-# Renders docs/assets/demo.gif: the one-command showcase that audits a sample
-# build, shows its hardening plan, then PROVES every countermeasure fires.
+# Story (about 25s): audit a plain build (84/100, wide open), harden the
+# guarded build, re-audit (40/100, partially hardened), and show it still runs.
 #
-# HOW TO RECORD (run inside WSL/Linux, where make + gcc + python3 exist):
-#   1. Install VHS + ffmpeg:   https://github.com/charmbracelet/vhs
-#        (WSL/Ubuntu: `sudo apt install ffmpeg` then grab the vhs binary)
-#   2. From the repo root:     vhs docs/assets/demo.tape
-#   3. Commit the generated docs/assets/demo.gif
+# Record inside WSL/Linux, where make + gcc + python3 exist:
+#   1. Install VHS + ffmpeg + ttyd: https://github.com/charmbracelet/vhs
+#   2. Build the samples once:      make -C harness/sample sample_baseline sample_hardened
+#   3. From the repo root:          vhs docs/assets/demo.tape
 #
-# Keep the GIF short (aim < 10s of actual output). Tune the Sleep below so the
-# recording ends right after "ALL CHECKS PASSED", not with dead air.
+# "app-guarded" is the same source as "app", built with Carapace's guards
+# (harness/harden/carapace_guards.c) linked in. The tape copies both samples
+# into /tmp/carapace-demo so the repo tree stays clean.
 
 Output docs/assets/demo.gif
 
-Set FontSize 18
-Set Width 1200
-Set Height 680
+Set Shell "bash"
+Set FontSize 17
+Set Width 1240
+Set Height 720
 Set Theme "Dracula"
-Set TypingSpeed 55ms
-Set Margin 16
-Set Padding 16
-Set BorderRadius 8
+Set TypingSpeed 40ms
+Set Padding 22
+Set WindowBar Colorful
+Set WindowBarSize 36
+Set BorderRadius 10
+Set Framerate 24
 
-# Start already inside the repo (hidden setup).
 Hide
-Type "clear"  Enter
-Show
-Sleep 400ms
-
-Type "make demo"
-Sleep 700ms
+Type `export REPO="$PWD" PS1='\[\e[1;32m\]$\[\e[0m\] '; alias carapace="python3 $REPO/skill/carapace.py"; rm -rf /tmp/carapace-demo; mkdir -p /tmp/carapace-demo; cp harness/sample/sample_baseline /tmp/carapace-demo/app; cp harness/sample/sample_hardened /tmp/carapace-demo/app-guarded; cd /tmp/carapace-demo; clear`
 Enter
+Sleep 500ms
+Show
 
-# Let the audit + proof run. Adjust this to match your machine's real runtime.
-Sleep 14s
+# Scene 1: measure, then harden
+Type "# 1. How exposed is my binary to an AI reverse-engineering agent?"
+Enter
+Type `carapace report app | grep -E 'SCORE|TIER'`
+Enter
+Sleep 2500ms
 
-# Hold on the final "all passed" summary so the loop reads clearly.
-Sleep 1500ms
+Type "# 2. Same app with Carapace guards linked in. Now harden the binary:"
+Enter
+Type "carapace harden app-guarded | head -17"
+Enter
+Sleep 5500ms
 
-# ---------------------------------------------------------------------------
-# ALTERNATIVE narrative (attacker's-eye view): swap the two lines above for a
-# mock-attacker run that shows the agent trying the plain build, then the
-# hardened one, with the before/after score. No local model needed:
-#
-#   Type "make slice-k-run-mock"
-#   Sleep 700ms
-#   Enter
-#   Sleep 20s
-#
-# Use whichever reads better once you watch both back.
+Hide
+Type "clear"
+Enter
+Show
+
+# Scene 2: prove it
+Type "# 3. Re-audit the hardened build"
+Enter
+Type `carapace report app-guarded.hardened | grep -E 'SCORE|TIER'`
+Enter
+Sleep 2500ms
+
+Type "# 4. ...and it still runs"
+Enter
+Type "./app-guarded.hardened"
+Enter
+Sleep 2000ms
+
+Type "# Every defense ships with a tier and a named bypass. Nothing is unbreakable."
+Enter
+Sleep 3500ms
