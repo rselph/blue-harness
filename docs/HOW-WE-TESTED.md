@@ -1,6 +1,6 @@
-# How Carapace is tested
+# How blue-harness is tested
 
-Carapace makes two kinds of claim, so it is tested in two layers. Keeping them
+blue-harness makes two kinds of claim, so it is tested in two layers. Keeping them
 apart is the whole point — one is a guarantee the build can enforce on every
 push, the other is a single, honestly-bounded measurement.
 
@@ -83,7 +83,7 @@ reproduced and — better — pushed harder.
     the JSON the model already emits. The gap is itself a P0-relevant finding: the
     "one-sentence crack" skill floor has real friction at the lowest tier.
 - **Isolating the answer:** only `crackme_baseline`, `crackme_hardened`, and
-  `SEAL.json` were copied into the VM. The **private honey-ledger and carapace-map
+  `SEAL.json` were copied into the VM. The **private honey-ledger and blue-harness-map
   never entered the VM**; scoring ran on the host.
 
 ### The result (recap)
@@ -106,7 +106,7 @@ Since Slice S the whole loop is packaged. Inside your isolated, operator-owned V
 with your own model served (e.g. by Ollama) and your flag in the environment:
 
 ```bash
-export CARAPACE_CRACKME_SECRET='CARA{your-own-flag}'   # never enters the repo
+export BH_CRACKME_SECRET='CARA{your-own-flag}'   # never enters the repo
 make slice-k-run MODEL=<your-model> TARGET=http://127.0.0.1:11434
 ```
 

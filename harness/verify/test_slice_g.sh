@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice G (PE / Windows exposure audit).
+# blue-harness — VERIFY harness for Slice G (PE / Windows exposure audit).
 # Audit-first, no new countermeasure: prove the PE scanner reads the signals an
 # AI-RE agent reads and scores them honestly. Fixtures are generated in-process
 # (no mingw/pefile needed) by harness/sample/pe_fixture.py.

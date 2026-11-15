@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — PE (Windows) exposure AUDIT scanner (Slice G).
+# blue-harness — PE (Windows) exposure AUDIT scanner (Slice G).
 #
 # The Track-A sibling of elf_exposure_audit.py: a read-only scanner for a single
 # Windows PE that reads the SAME signals an AI-assisted RE agent such as `rea`
@@ -252,10 +252,10 @@ def analyze(path):
     if high_entropy and not packer:
         packer.append("high-entropy (possible packing)")
 
-    # Carapace post-build levers (overlay-resident; detected, never scored — they
+    # blue-harness post-build levers (overlay-resident; detected, never scored — they
     # are COST/DETECTION, not an exposure change). Mirrors the ELF guards section.
-    decoy_overlay_present = b"__CARAPACE_PE_EXH_" in d
-    honeytokens_present = b"__CARAPACE_PE_HONEY__" in d
+    decoy_overlay_present = b"__BH_PE_EXH_" in d
+    honeytokens_present = b"__BH_PE_HONEY__" in d
 
     s = {
         "file": os.path.basename(path),
@@ -321,14 +321,14 @@ def recommend(s):
     h = s["hardening"]
     if s["debug_info_present"] or s["symbols_present"]:
         return ("Strip the COFF symbol table + debug directory / PDB path "
-                "(harness/harden/carapace_pe_strip.py). Tier: Speed-bump→Meaningful. "
+                "(harness/harden/bh_pe_strip.py). Tier: Speed-bump→Meaningful. "
                 "Bypass: the agent reasons from imports/behavior without symbols.")
     if not (h["aslr"] and h["dep_nx"] and h["cfg"]):
         return ("Link with /DYNAMICBASE /NXCOMPAT /GUARD:CF /HIGHENTROPYVA. "
                 "Tier: raises exploitation effort — it does NOT block decompilation.")
     if s["string_density"] >= 0.05:
         return ("Encrypt / decode-on-demand high-density plaintext strings "
-                "(see harness/harden/carapace_string_encrypt.py). Tier: Speed-bump→Meaningful. "
+                "(see harness/harden/bh_string_encrypt.py). Tier: Speed-bump→Meaningful. "
                 "Bypass: runtime key recovery.")
     if not s["authenticode_present"]:
         return ("Authenticode-sign AND verify at runtime server-side. Tier: Meaningful only WITH "
@@ -343,7 +343,7 @@ def render(s):
         return y if b else n
     L = []
     L.append("=" * 68)
-    L.append(f"  Carapace PE Exposure Audit — {s['file']}  [{s['format']} / {s['machine']}]")
+    L.append(f"  blue-harness PE Exposure Audit — {s['file']}  [{s['format']} / {s['machine']}]")
     L.append("=" * 68)
     L.append(f"  EXPOSURE SCORE : {s['score']}/100")
     L.append(f"  POSTURE TIER   : {s['tier']}")
@@ -359,7 +359,7 @@ def render(s):
     for dll, fns in list(s["imports"].items())[:4]:
         L.append(f"      {dll}: {', '.join(fns[:6])}{' …' if len(fns) > 6 else ''}")
     L.append(f"    .NET / packer .......... dotnet={yn(s['dotnet'])}; packer={', '.join(s['packer']) or 'none'}")
-    L.append(f"    Carapace levers ........ decoy-overlay={yn(s.get('decoy_overlay_present', False))}; "
+    L.append(f"    blue-harness levers ........ decoy-overlay={yn(s.get('decoy_overlay_present', False))}; "
              f"honeytokens={yn(s.get('honeytokens_present', False))}  (post-build; COST/DETECTION, not scored)")
     L.append("")
     L.append("  Hardening flags (parity with rea's inspect_pe_load_config):")
@@ -382,7 +382,7 @@ def render(s):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Carapace PE exposure audit (read-only).")
+    ap = argparse.ArgumentParser(description="blue-harness PE exposure audit (read-only).")
     ap.add_argument("binary")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)

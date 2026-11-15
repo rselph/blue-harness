@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — the harness driver the skill calls (Slice C).
+# blue-harness — the harness driver the skill calls (Slice C).
 #
 # WHAT THIS IS
 #   A thin, deterministic entry point over harness/ that implements the product
@@ -34,15 +34,15 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AUDIT_DIR = os.path.join(REPO, "harness", "audit")
 AUDIT = os.path.join(AUDIT_DIR, "elf_exposure_audit.py")
 HARDEN_DIR = os.path.join(REPO, "harness", "harden")
-TRANSFORM = os.path.join(HARDEN_DIR, "carapace_identity_transform.py")
-EXHAUST = os.path.join(HARDEN_DIR, "carapace_exhaust.py")
-HONEY = os.path.join(HARDEN_DIR, "carapace_honeytokens.py")
-MACHO_STRIP = os.path.join(HARDEN_DIR, "carapace_macho_strip.py")
-MACHO_EXHAUST = os.path.join(HARDEN_DIR, "carapace_macho_exhaust.py")
-MACHO_HONEY = os.path.join(HARDEN_DIR, "carapace_macho_honeytokens.py")
-PE_STRIP = os.path.join(HARDEN_DIR, "carapace_pe_strip.py")
-PE_EXHAUST = os.path.join(HARDEN_DIR, "carapace_pe_exhaust.py")
-PE_HONEY = os.path.join(HARDEN_DIR, "carapace_pe_honeytokens.py")
+TRANSFORM = os.path.join(HARDEN_DIR, "bh_identity_transform.py")
+EXHAUST = os.path.join(HARDEN_DIR, "bh_exhaust.py")
+HONEY = os.path.join(HARDEN_DIR, "bh_honeytokens.py")
+MACHO_STRIP = os.path.join(HARDEN_DIR, "bh_macho_strip.py")
+MACHO_EXHAUST = os.path.join(HARDEN_DIR, "bh_macho_exhaust.py")
+MACHO_HONEY = os.path.join(HARDEN_DIR, "bh_macho_honeytokens.py")
+PE_STRIP = os.path.join(HARDEN_DIR, "bh_pe_strip.py")
+PE_EXHAUST = os.path.join(HARDEN_DIR, "bh_pe_exhaust.py")
+PE_HONEY = os.path.join(HARDEN_DIR, "bh_pe_honeytokens.py")
 
 sys.path.insert(0, AUDIT_DIR)
 from elf_exposure_audit import analyze, render  # noqa: E402  (ELF: analyze/render)
@@ -91,7 +91,7 @@ def _mobile_audit():
 def _mobile_harden():
     import importlib
     sys.path.insert(0, HARDEN_DIR)
-    return importlib.import_module("carapace_mobile")
+    return importlib.import_module("bh_mobile")
 
 
 # Mach-O scanner is wired lazily so the ELF/PE path never pays its import cost
@@ -131,8 +131,8 @@ def _rules(s, binpath):
             "tier": "Speed-bump→Meaningful (Meaningful vs lazy/one-shot agents & junior analysts)",
             "bypass": "Behavioral cross-check (xrefs/value-flow) ignores names; a thorough agent "
                       "recovers logic, and rea's coverage ledger surfaces decoy contradictions.",
-            "command": f"python3 harness/harden/carapace_identity_transform.py transform "
-                       f"--mode D --in {b} --out {b}.release --map {b}.carapace-map.json",
+            "command": f"python3 harness/harden/bh_identity_transform.py transform "
+                       f"--mode D --in {b} --out {b}.release --map {b}.blue-harness-map.json",
             "note": "Keep the mapping file PRIVATE (out of the shipped artifact). Mode S strips, "
                     "M keeps a reversible opaque map, D plants plausible decoys.",
         })
@@ -146,7 +146,7 @@ def _rules(s, binpath):
             "weapon": "rea Cluster E (inspect_recorded_crash)",
             "tier": "Speed-bump",
             "bypass": "Attacker re-enables cores on their own host, or reads live memory via Frida/GDB.",
-            "command": "link harness/harden/carapace_guards.c and call carapace_guard_coredump() "
+            "command": "link harness/harden/bh_guards.c and call bh_guard_coredump() "
                        "at startup (see harness/harden/README.md)",
             "note": "Compile-time: requires a rebuild. setrlimit(RLIMIT_CORE,0)+prctl(PR_SET_DUMPABLE,0).",
         })
@@ -160,7 +160,7 @@ def _rules(s, binpath):
             "weapon": "rea Cluster G (Frida attach, ptrace-based) + Cluster H (GDB)",
             "tier": "Meaningful",
             "bypass": "Frida can hook the check; a spawn-paused session loads a bypass before it runs.",
-            "command": "link harness/harden/carapace_guards.c and call carapace_guard_antiptrace() "
+            "command": "link harness/harden/bh_guards.c and call bh_guard_antiptrace() "
                        "at startup (see harness/harden/README.md)",
             "note": "Compile-time: requires a rebuild. TracerPid read then PTRACE_TRACEME slot-claim.",
         })
@@ -175,7 +175,7 @@ def _rules(s, binpath):
             "tier": "Meaningful",
             "bypass": "Frida stalker/stealth modes, a renamed gadget, a non-default port, or an "
                       "attacker who edits the signatures once found.",
-            "command": "link harness/harden/carapace_antifrida.c and call carapace_antifrida_scan() "
+            "command": "link harness/harden/bh_antifrida.c and call bh_antifrida_scan() "
                        "at startup / periodically (see harness/harden/README.md)",
             "note": "Compile-time. One of three signals trips detection; no single client check suffices.",
         })
@@ -191,8 +191,8 @@ def _rules(s, binpath):
             "bypass": "A sustained live hook that recomputes the pristine checksum each challenge; "
                       "the client key can be extracted — so trust rests on the SERVER nonce + the "
                       "server holding the good checksum, not on client-side secrecy.",
-            "command": "link harness/harden/carapace_integrity.c, attest with "
-                       "carapace_integrity_response(nonce) to your server (ref: harness/harden/attest_server.py)",
+            "command": "link harness/harden/bh_integrity.c, attest with "
+                       "bh_integrity_response(nonce) to your server (ref: harness/harden/attest_server.py)",
             "note": "Compile-time + a server. Replay- and patch-resistant only with a per-challenge "
                     "server nonce; not a substitute for keeping the secret server-side.",
         })
@@ -207,8 +207,8 @@ def _rules(s, binpath):
             "tier": "Speed-bump→Meaningful",
             "bypass": "The key is embedded — recover plaintext at rest (re-run the keystream) or "
                       "lift the decoded string from memory at runtime (Frida/GDB).",
-            "command": "mark strings in a manifest, run harness/harden/carapace_string_encrypt.py gen, "
-                       "link harness/harden/carapace_strings.c and use carapace_cstr(id) (see harden/README.md)",
+            "command": "mark strings in a manifest, run harness/harden/bh_string_encrypt.py gen, "
+                       "link harness/harden/bh_strings.c and use bh_cstr(id) (see harden/README.md)",
             "note": "Compile-time. Not a secret store — a secret that truly can't leak belongs "
                     "server-side. The identity transform's decoy pass covers internal strings; this "
                     "covers live, used strings.",
@@ -224,7 +224,7 @@ def _rules(s, binpath):
             "tier": "Trivial→Speed-bump (taxes the lazy automated path; not a comprehension blocker)",
             "bypass": "Restrict analysis to allocated/executable (SHF_ALLOC) sections and to "
                       "code-referenced symbols — our decoys are never mapped and never called.",
-            "command": f"python3 harness/harden/carapace_exhaust.py {b} {b}.exh "
+            "command": f"python3 harness/harden/bh_exhaust.py {b} {b}.exh "
                        f"--sections 4 --section-size 131072 --symbols 300",
             "note": "Post-build; runtime byte-identical, exports untouched (verified). Pairs with the "
                     "identity transform — exhaust AFTER decoying so the surface stays plausible.",
@@ -240,7 +240,7 @@ def _rules(s, binpath):
             "tier": "Speed-bump (poison) / Meaningful FOR DETECTION (attribution — not prevention)",
             "bypass": "A careful analyst xref-validates a 'secret' and drops one nothing references; "
                       "the default section name is a tell, so rename/randomise it for production.",
-            "command": f"python3 harness/harden/carapace_honeytokens.py plant {b} {b}.honey "
+            "command": f"python3 harness/harden/bh_honeytokens.py plant {b} {b}.honey "
                        f"--ledger {b}.honey-ledger.json --count 10 --build-tag <build-id>",
             "note": "Post-build; runtime byte-identical, exports untouched (verified). Keep the ledger "
                     "PRIVATE — it attributes a leaked token to the exact build. Detects/attributes a "
@@ -316,7 +316,7 @@ def cmd_audit(args):
         try:
             print(mca.render(mca.analyze(args.binary)))
         except mca.ContainerError as e:
-            print(f"carapace error: {e}", file=sys.stderr)
+            print(f"blue-harness error: {e}", file=sys.stderr)
             return 2
     else:
         _unknown(args.binary)
@@ -330,9 +330,9 @@ def cmd_recommend(args):
         try:
             s = mca.analyze(args.binary)
         except mca.ContainerError as e:
-            print(f"carapace error: {e}", file=sys.stderr)
+            print(f"blue-harness error: {e}", file=sys.stderr)
             return 2
-        print(f"Carapace — next hardening for {_rel(args.binary)} "
+        print(f"blue-harness — next hardening for {_rel(args.binary)} "
               f"[{s['kind'].upper()} / {s['os']}]")
         print(f"  {s['payload_count']} native payload(s); worst exposure "
               f"{s['max_score']}/100")
@@ -349,7 +349,7 @@ def cmd_recommend(args):
             m = _macho_audit()
             s = m.analyze(args.binary)
             line = m.recommend(s)
-        print(f"Carapace — next hardening for {_rel(args.binary)} [{fmt.upper()}]")
+        print(f"blue-harness — next hardening for {_rel(args.binary)} [{fmt.upper()}]")
         print(f"  exposure score {s['score']}/100 — {s['tier']}")
         print()
         print(f"  {line}")
@@ -362,7 +362,7 @@ def cmd_recommend(args):
     if args.json:
         print(json.dumps({"score": s["score"], "tier": s["tier"], "recommendations": recs}, indent=2))
         return 0
-    print(f"Carapace — next hardening for {_rel(args.binary)}")
+    print(f"blue-harness — next hardening for {_rel(args.binary)}")
     print(f"  exposure score {s['score']}/100 — {s['tier']}")
     print()
     for r in recs:
@@ -383,7 +383,7 @@ def cmd_report(args):
         try:
             s = mca.analyze(args.binary)
         except mca.ContainerError as e:
-            print(f"carapace error: {e}", file=sys.stderr)
+            print(f"blue-harness error: {e}", file=sys.stderr)
             return 2
         print(mca.render(s))
         print()
@@ -419,11 +419,11 @@ def cmd_report(args):
 def cmd_apply(args):
     fmt = _detect_format(args.binary)
     if fmt == "mobile":
-        print(f"carapace: {_rel(args.binary)} is a mobile container — use "
-              "`carapace harden` for containers.")
+        print(f"blue-harness: {_rel(args.binary)} is a mobile container — use "
+              "`blue-harness harden` for containers.")
         print("  It dispatches the per-format native hardeners to each payload "
               "inside and repacks;")
-        print("  then re-sign (apksigner/codesign). `carapace audit` gives the "
+        print("  then re-sign (apksigner/codesign). `blue-harness audit` gives the "
               "read-only posture.")
         return 3
     if fmt == "macho":
@@ -436,7 +436,7 @@ def cmd_apply(args):
             sys.stderr.write(r.stderr)
             return r.returncode
         print(f"  applied -> {_rel(out)}   (Mach-O local-symbol strip)")
-        print("  re-audit with `carapace audit`; runtime-identical needs a macOS host to confirm.")
+        print("  re-audit with `blue-harness audit`; runtime-identical needs a macOS host to confirm.")
         return 0
     if fmt == "pe":
         # the one safe PE post-build pass: COFF-symbol + debug/PDB strip.
@@ -448,12 +448,12 @@ def cmd_apply(args):
             sys.stderr.write(r.stderr)
             return r.returncode
         print(f"  applied -> {_rel(out)}   (PE COFF-symbol + debug/PDB strip)")
-        print("  re-audit with `carapace audit`; runtime-identical needs a Windows host to confirm.")
+        print("  re-audit with `blue-harness audit`; runtime-identical needs a Windows host to confirm.")
         return 0
     if fmt != "elf":
-        print(f"carapace: apply targets ELF; {_rel(args.binary)} is {fmt.upper()}.")
+        print(f"blue-harness: apply targets ELF; {_rel(args.binary)} is {fmt.upper()}.")
         print("  The post-build transforms (identity/exhaust/honeytokens) are ELF-only today;")
-        print("  run `carapace audit` for the read-only posture, and keep secrets server-side.")
+        print("  run `blue-harness audit` for the read-only posture, and keep secrets server-side.")
         return 3
     s, recs = recommend(args.binary, want_all=False)
     top = recs[0]
@@ -461,11 +461,11 @@ def cmd_apply(args):
     if top["kind"] != "post-build":
         print(f"  This is a {top['kind']} hardening — it cannot be patched into an already-built")
         print(f"  binary. Integration step: {top['command']}")
-        print("  (Rebuild from source, then re-run `carapace recommend` to confirm.)")
+        print("  (Rebuild from source, then re-run `blue-harness recommend` to confirm.)")
         return 3
     # post-build: apply the identity transform
     out = args.out or (args.binary + ".release")
-    mp = args.map or (args.binary + ".carapace-map.json")
+    mp = args.map or (args.binary + ".blue-harness-map.json")
     cmd = ["python3", TRANSFORM, "transform", "--mode", args.mode,
            "--in", args.binary, "--out", out, "--map", mp]
     if args.string_decoys:
@@ -476,7 +476,7 @@ def cmd_apply(args):
         sys.stderr.write(r.stderr)
         return r.returncode
     print(f"  applied -> {_rel(out)}   (private map: {_rel(mp)})")
-    print("  re-audit the result with `carapace recommend` to see the next step.")
+    print("  re-audit the result with `blue-harness recommend` to see the next step.")
     return 0
 
 
@@ -491,7 +491,7 @@ def _harden_pe(args, binary):
     out = args.out or (binary + ".hardened")
     s = pe_audit.analyze(binary)
 
-    tmpd = tempfile.mkdtemp(prefix="carapace_pe_harden_")
+    tmpd = tempfile.mkdtemp(prefix="bh_pe_harden_")
     cur = os.path.join(tmpd, "stage0")
     _sh.copy2(binary, cur)
     stage = 0
@@ -547,7 +547,7 @@ def _harden_pe(args, binary):
     finally:
         _sh.rmtree(tmpd, ignore_errors=True)
 
-    print(f"Carapace harden (PE) — {_rel(binary)} → {_rel(out)}")
+    print(f"blue-harness harden (PE) — {_rel(binary)} → {_rel(out)}")
     print(f"  exposure score {s['score']}/100 → (re-audit {_rel(out)} to see the new posture)")
     print()
     print(f"  APPLIED (post-build, {len(applied)}):")
@@ -562,7 +562,7 @@ def _harden_pe(args, binary):
     print("  NOT APPLIED — build-time, needs a relink/rebuild from source:")
     print("    • Link /DYNAMICBASE /NXCOMPAT /GUARD:CF /HIGHENTROPYVA  [raises exploitation effort;")
     print("        NOT a decompilation blocker]")
-    print("    • Encrypt live strings + decode on demand (harness/harden/carapace_string_encrypt.py)")
+    print("    • Encrypt live strings + decode on demand (harness/harden/bh_string_encrypt.py)")
     print("        [Speed-bump→Meaningful; bypass: runtime key recovery]")
     print("    • Authenticode-sign AND verify at runtime server-side  [Meaningful only WITH the")
     print("        server check — a signature on disk is read, not verified, by an RE agent]")
@@ -587,7 +587,7 @@ def _harden_macho(args, binary):
     out = args.out or (binary + ".hardened")
     s = m.analyze(binary)
 
-    tmpd = tempfile.mkdtemp(prefix="carapace_macho_harden_")
+    tmpd = tempfile.mkdtemp(prefix="bh_macho_harden_")
     cur = os.path.join(tmpd, "stage0")
     _sh.copy2(binary, cur)
     stage = 0
@@ -643,7 +643,7 @@ def _harden_macho(args, binary):
     finally:
         _sh.rmtree(tmpd, ignore_errors=True)
 
-    print(f"Carapace harden (Mach-O) — {_rel(binary)} → {_rel(out)}")
+    print(f"blue-harness harden (Mach-O) — {_rel(binary)} → {_rel(out)}")
     print(f"  exposure score {s['score']}/100 → (re-audit {_rel(out)} to see the new posture)")
     print()
     print(f"  APPLIED (post-build, {len(applied)}):")
@@ -687,7 +687,7 @@ def cmd_harden(args):
             res = mob.harden(binary, out=args.out, build_tag=args.build_tag)
         except (mob.MobileHardenError, mob.mca.ContainerError,
                 FileNotFoundError) as e:
-            print(f"carapace error: {e}", file=sys.stderr)
+            print(f"blue-harness error: {e}", file=sys.stderr)
             return 2
         print(mob.render(res))
         return 0
@@ -696,13 +696,13 @@ def cmd_harden(args):
     if fmt == "macho":
         return _harden_macho(args, binary)
     if fmt != "elf":
-        print(f"carapace: harden targets ELF/PE/Mach-O; {_rel(binary)} is {fmt.upper()}.")
-        print("  run `carapace audit` for the read-only posture, and keep secrets server-side.")
+        print(f"blue-harness: harden targets ELF/PE/Mach-O; {_rel(binary)} is {fmt.upper()}.")
+        print("  run `blue-harness audit` for the read-only posture, and keep secrets server-side.")
         return 3
     out = args.out or (binary + ".hardened")
     s = analyze(binary)
 
-    tmpd = tempfile.mkdtemp(prefix="carapace_harden_")
+    tmpd = tempfile.mkdtemp(prefix="bh_harden_")
     cur = os.path.join(tmpd, "stage0")
     _sh.copy2(binary, cur)
     stage = 0
@@ -725,7 +725,7 @@ def cmd_harden(args):
         # additive passes (exhaust / honeytokens) so they aren't touched by it.
         if s["symbols_present"] or s["debug_info_present"] or s["informativeness"]["symbol_total"] > 0:
             nf = _next()
-            mp = out + ".carapace-map.json"
+            mp = out + ".blue-harness-map.json"
             _run_pass(["python3", TRANSFORM, "transform", "--mode", "D",
                        "--in", cur, "--out", nf, "--map", mp])
             cur = nf
@@ -767,7 +767,7 @@ def cmd_harden(args):
     deferred = [r for r in recs if r["kind"] == "build-time"]
     design = [r for r in recs if r["kind"] == "design"]
 
-    print(f"Carapace harden — {_rel(binary)} → {_rel(out)}")
+    print(f"blue-harness harden — {_rel(binary)} → {_rel(out)}")
     print(f"  exposure score {s['score']}/100 → (re-audit {_rel(out)} to see the new posture)")
     print()
     print(f"  APPLIED (post-build, {len(applied)}):")
@@ -797,30 +797,30 @@ def cmd_harden(args):
 
 
 def cmd_install(args):
-    """Install the skill by symlinking skill/ into a .claude/skills/carapace dir —
+    """Install the skill by symlinking skill/ into a .claude/skills/blue-harness dir —
     the one-command 'make it available to Claude' step (install parity)."""
     skill_dir = os.path.join(REPO, "skill")
     base = args.dir or os.path.join(os.path.expanduser("~") if args.user else os.getcwd(),
                                      ".claude", "skills")
-    target = os.path.join(base, "carapace")
+    target = os.path.join(base, "blue-harness")
     os.makedirs(base, exist_ok=True)
     if os.path.islink(target):
         os.unlink(target)
     elif os.path.exists(target):
-        print(f"carapace error: {target} exists and is not a symlink — remove it first",
+        print(f"blue-harness error: {target} exists and is not a symlink — remove it first",
               file=sys.stderr)
         return 2
     os.symlink(skill_dir, target)
-    print(f"carapace skill installed: {target} -> {skill_dir}")
-    print("  Claude Code will discover it as the 'carapace' skill. Verify with: "
+    print(f"blue-harness skill installed: {target} -> {skill_dir}")
+    print("  Claude Code will discover it as the 'blue-harness' skill. Verify with: "
           "ls -l " + target)
     return 0
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        prog="carapace",
-        description="Drive the Carapace harness: audit a build, recommend and apply hardening.")
+        prog="blue-harness",
+        description="Drive the blue-harness harness: audit a build, recommend and apply hardening.")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     a = sub.add_parser("audit", help="print the full exposure report")
@@ -851,7 +851,7 @@ def main(argv=None):
     h.add_argument("--build-tag", default="dev-build", help="build id recorded in the honeytoken ledger")
     h.set_defaults(fn=cmd_harden)
 
-    i = sub.add_parser("install", help="symlink the skill into .claude/skills/carapace")
+    i = sub.add_parser("install", help="symlink the skill into .claude/skills/blue-harness")
     i.add_argument("--user", action="store_true", help="install into ~/.claude/skills instead of ./")
     i.add_argument("--dir", help="explicit .claude/skills base dir (overrides --user)")
     i.set_defaults(fn=cmd_install)
@@ -860,7 +860,7 @@ def main(argv=None):
     try:
         return args.fn(args)
     except (FileNotFoundError, IsADirectoryError, ValueError, pe_audit.PEError) as e:
-        print(f"carapace error: {e}", file=sys.stderr)
+        print(f"blue-harness error: {e}", file=sys.stderr)
         return 2
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — PE (Windows) COFF-symbol + debug/PDB-path STRIP (Slice P).
+# blue-harness — PE (Windows) COFF-symbol + debug/PDB-path STRIP (Slice P).
 #
 # WHAT THIS IS
 #   The PE analog of the Mach-O local-symbol strip and the ELF identity strip: a
@@ -144,7 +144,7 @@ def strip_pe(src, dst):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Carapace PE COFF-symbol + debug/PDB strip (editbin-equivalent; "
+        description="blue-harness PE COFF-symbol + debug/PDB strip (editbin-equivalent; "
                     "removes dev identity, not behaviour).")
     ap.add_argument("--in", dest="src", required=True)
     ap.add_argument("--out", dest="dst", required=True)
@@ -152,9 +152,9 @@ def main(argv=None):
     try:
         info = strip_pe(a.src, a.dst)
     except (StripError, PEError, FileNotFoundError, IsADirectoryError) as e:
-        print(f"carapace-pe-strip error: {e}", file=sys.stderr)
+        print(f"blue-harness-pe-strip error: {e}", file=sys.stderr)
         return 2
-    print(f"[carapace-pe-strip] {a.src} -> {a.dst}")
+    print(f"[blue-harness-pe-strip] {a.src} -> {a.dst}")
     print(f"  removed {info['coff_symbols_removed']} COFF symbol(s); "
           f"debug directory stripped: {info['debug_directory_stripped']}; "
           f"PDB-path bytes scrubbed: {info['pdb_path_bytes_scrubbed']}")

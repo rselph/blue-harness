@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — HONEYTOKENS / canaries (Slice J): the Poison + Hallucinate play.
+# blue-harness — HONEYTOKENS / canaries (Slice J): the Poison + Hallucinate play.
 #
 # WHAT THIS IS
 #   Plants plausible, format-valid FAKE secrets (AWS-style keys, bearer tokens,
@@ -15,7 +15,7 @@
 #   `check` matches it back to the exact build that leaked (canary-token pattern).
 #
 # PLACEMENT (post-build, binutils): a non-allocated section (default
-#   .carapace_honey) — never mapped at runtime, so the program is byte-identical
+#   .bh_honey) — never mapped at runtime, so the program is byte-identical
 #   and the tokens are provably unreferenced (pure decoys, not logic). They remain
 #   visible to a whole-file `strings` / list_strings scan, which is exactly the
 #   naive agent's mining path.
@@ -43,7 +43,7 @@ import tempfile
 import hashlib
 from datetime import datetime, timezone
 
-DEFAULT_SECTION = ".carapace_honey"
+DEFAULT_SECTION = ".bh_honey"
 _ALNUM_UP = string.ascii_uppercase + string.digits
 _B64 = string.ascii_letters + string.digits + "+/"
 
@@ -105,7 +105,7 @@ def plant(src, dst, ledger_path, count, seed, build_tag, section, objcopy="objco
     blob = ("\n".join(t["value"] for t in tokens) + "\n").encode()
 
     shutil.copy2(src, dst)      # preserve mode (+x)
-    tmpdir = tempfile.mkdtemp(prefix="carapace_honey_")
+    tmpdir = tempfile.mkdtemp(prefix="bh_honey_")
     try:
         blobpath = os.path.join(tmpdir, "honey.bin")
         with open(blobpath, "wb") as f:
@@ -145,7 +145,7 @@ def _cmd_plant(a):
         raise SystemExit(f"input not found: {a.src}")
     ledger = plant(a.src, a.dst, a.ledger, a.count, a.seed, a.build_tag,
                    a.section, a.objcopy)
-    print(f"[carapace-honeytokens] {a.src} -> {a.dst}")
+    print(f"[blue-harness-honeytokens] {a.src} -> {a.dst}")
     print(f"  planted .......... {len(ledger['tokens'])} tokens into {a.section} "
           f"(non-alloc; never mapped at runtime)")
     print(f"  private ledger ... {a.ledger}  (KEEP OUT OF THE SHIP — it is the key)")
@@ -173,7 +173,7 @@ def _cmd_check(a):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Carapace honeytokens — plant plausible decoy secrets + a private "
+        description="blue-harness honeytokens — plant plausible decoy secrets + a private "
                     "attribution ledger (poison + canary; not prevention).")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
@@ -181,7 +181,7 @@ def main(argv=None):
     p.add_argument("src"); p.add_argument("dst")
     p.add_argument("--ledger", required=True, help="private ledger JSON to write (keep out of ship)")
     p.add_argument("--count", type=int, default=10)
-    p.add_argument("--seed", default="carapace")
+    p.add_argument("--seed", default="blue-harness")
     p.add_argument("--build-tag", default="dev-build")
     p.add_argument("--section", default=DEFAULT_SECTION)
     p.add_argument("--objcopy", default="objcopy")

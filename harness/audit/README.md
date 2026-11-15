@@ -3,7 +3,7 @@
 Three self-contained scanners (no external deps), one per native format. Each reads
 the **same signals an AI-assisted RE agent (e.g. `rea`) reads** from its static
 inspectors and scores them on the same tiers; none modifies the target (audit
-before harden, CLAUDE.md §8). The skill's `carapace audit`/`report` **auto-detects
+before harden, CLAUDE.md §8). The skill's `blue-harness audit`/`report` **auto-detects
 the format by magic byte** and routes to the right one (Slice M).
 
 - `elf_exposure_audit.py` — Linux **ELF** (the implemented countermeasures target

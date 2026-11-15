@@ -1,4 +1,4 @@
-# Carapace decoy identifier dictionary (Mode D).
+# blue-harness decoy identifier dictionary (Mode D).
 # Plausible, natural-looking names used to RENAME internal symbols to something
 # misleading-but-believable, so a lazy/one-shot agent trusts them and chases
 # false hypotheses. They must look like ordinary app code (NOT opaque sub_XXXX),

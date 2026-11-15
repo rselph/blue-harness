@@ -1,8 +1,8 @@
-/* Carapace sample Linux ELF — a tiny app the operator "owns".
+/* blue-harness sample Linux ELF — a tiny app the operator "owns".
  *
  * ONE source, two builds (see Makefile):
  *   sample_baseline  : no guards            -> audit reports guards ABSENT
- *   sample_hardened  : -DCARAPACE_HARDENED  -> calls carapace_guards_init()
+ *   sample_hardened  : -DBH_HARDENED  -> calls bh_guards_init()
  *                                               -> audit reports guards PRESENT
  *
  * This single-source/two-builds shape is what lets ../verify prove the audit
@@ -22,8 +22,8 @@
 #include <sys/prctl.h>
 #include <sys/resource.h>
 
-#ifdef CARAPACE_HARDENED
-#include "carapace_guards.h"
+#ifdef BH_HARDENED
+#include "bh_guards.h"
 #endif
 
 /* A couple of plausible plaintext strings so the audit's string-density and
@@ -41,7 +41,7 @@ static int compute_checksum(const char *s)
  * sink below and NEVER printed, so a same-length decoy swap is invisible to
  * program output. The verify step enforces that invisibility. */
 static const char INTERNAL_BUILD_TAG[] = "build:prod-eu-signing-slot-03";
-volatile int carapace_tag_sink;
+volatile int bh_tag_sink;
 
 static void print_dumpstate(void)
 {
@@ -55,12 +55,12 @@ static void print_dumpstate(void)
 
 int main(int argc, char **argv)
 {
-#ifdef CARAPACE_HARDENED
-    int g = carapace_guards_init();
-    if (g == CARAPACE_TRACER_DETECTED) {
+#ifdef BH_HARDENED
+    int g = bh_guards_init();
+    if (g == BH_TRACER_DETECTED) {
         /* Policy is the operator's call; here we refuse to run under a tracer
          * so the detection branch is testable (distinct exit code 42). */
-        fprintf(stderr, "CARAPACE: tracer detected at init — refusing to run\n");
+        fprintf(stderr, "BLUE-HARNESS: tracer detected at init — refusing to run\n");
         return 42;
     }
 #endif
@@ -90,11 +90,11 @@ int main(int argc, char **argv)
     }
 
     /* default: do a little real work so the binary isn't empty */
-    const char *banner = "Carapace sample app: licensed build, do not redistribute";
+    const char *banner = "blue-harness sample app: licensed build, do not redistribute";
     int sum = 0;
     /* reference the internal tag so the linker keeps it, without affecting any
      * observable output (never printed) — a sound target for a decoy swap. */
-    carapace_tag_sink = compute_checksum(INTERNAL_BUILD_TAG);
+    bh_tag_sink = compute_checksum(INTERNAL_BUILD_TAG);
     for (int i = 0; i < 1000; ++i)
         sum += compute_checksum(banner) % (i + 1);
     printf("sample: ran OK (work=%d)\n", sum);

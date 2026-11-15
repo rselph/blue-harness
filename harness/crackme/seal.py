@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace CrackMe — seal + verify.
+# blue-harness CrackMe — seal + verify.
 #
 # `seal`   writes SEAL.json = { sha256(flag), len, built_at, note } — the DIGEST
 #          only. The plaintext flag is never written to the repo; a solver proves
@@ -21,7 +21,7 @@ def seal(flag, out):
         "sha256": hashlib.sha256(flag.encode()).hexdigest(),
         "len": len(flag),
         "built_at": datetime.now(timezone.utc).isoformat(),
-        "note": "Carapace CrackMe — recover the flag whose SHA-256 equals 'sha256'. "
+        "note": "blue-harness CrackMe — recover the flag whose SHA-256 equals 'sha256'. "
                 "The plaintext is not published. Verify with seal.py verify.",
     }
     with open(out, "w") as f:
@@ -36,7 +36,7 @@ def verify(seal_path, guess):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Carapace CrackMe seal/verify (digest only).")
+    ap = argparse.ArgumentParser(description="blue-harness CrackMe seal/verify (digest only).")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("seal", help="write SEAL.json (digest of the flag)")

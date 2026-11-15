@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — MOBILE-CONTAINER exposure AUDIT (Slice R; audit before harden, CLAUDE.md §8)
+# blue-harness — MOBILE-CONTAINER exposure AUDIT (Slice R; audit before harden, CLAUDE.md §8)
 #
 # WHAT THIS IS
 #   A read-only exposure scanner for a mobile app CONTAINER — Android APK/AAB or
@@ -15,13 +15,13 @@
 #
 # SCOPE (CLAUDE.md §2): NATIVE payloads only. Dalvik/DEX (classes*.dex — Java/
 #   Kotlin bytecode) is a SEPARATE track and OUT of scope here: it is counted as
-#   "skipped (out of scope)", never audited or hardened by Carapace.
+#   "skipped (out of scope)", never audited or hardened by blue-harness.
 #
 # HONESTY (CLAUDE.md §3)
 #   The container is a ZIP — it is NOT a barrier, and this tool never pretends it
 #   is. Reach, not strength: the exposure of each payload is whatever the ELF /
 #   Mach-O auditor infers. It NEVER modifies the container (harden lives in
-#   ../harden/carapace_mobile.py; verify in ../verify/test_slice_r.sh).
+#   ../harden/bh_mobile.py; verify in ../verify/test_slice_r.sh).
 #
 # NO EXTERNAL DEPS: pure-Python (zipfile + the self-contained ELF/Mach-O parsers),
 #   so the audit runs anywhere Python 3 does — cross-platform, not host-gated.
@@ -159,7 +159,7 @@ def analyze(path):
     if not zipfile.is_zipfile(path):
         raise ContainerError(f"not a ZIP container (APK/AAB/IPA are ZIP): {path}")
     out = {"path": path}
-    work = tempfile.mkdtemp(prefix="carapace_mobile_audit_")
+    work = tempfile.mkdtemp(prefix="bh_mobile_audit_")
     try:
         with zipfile.ZipFile(path) as zf:
             container = detect_container(zf)
@@ -187,7 +187,7 @@ def analyze(path):
 def render(s):
     L = []
     L.append("=" * 66)
-    L.append(f"  CARAPACE MOBILE-CONTAINER AUDIT — {os.path.basename(s['path'])}")
+    L.append(f"  BLUE-HARNESS MOBILE-CONTAINER AUDIT — {os.path.basename(s['path'])}")
     L.append(f"  container : {s['kind'].upper()}  ({s['os']})")
     L.append(f"  native payloads : {s['payload_count']}   "
              f"(DEX/managed members skipped — out of scope: {s['dex_skipped']})")
@@ -214,7 +214,7 @@ def render(s):
     L.append("  Reach, not strength: each payload's posture is whatever the ELF /")
     L.append("  Mach-O auditor infers; the ZIP wrapper is NOT a barrier. DEX/managed")
     L.append("  code is a separate track (out of scope). To raise the native payloads'")
-    L.append("  cost, run `carapace harden <container>` (dispatches the per-format")
+    L.append("  cost, run `blue-harness harden <container>` (dispatches the per-format")
     L.append("  hardeners + repacks).")
     L.append("  SIGNING: repacking invalidates the APK/IPA signature — the operator")
     L.append("  re-signs (apksigner / codesign); on-device integrity ultimately rests")
@@ -227,22 +227,22 @@ def recommend(s):
     if not s["payloads"]:
         return "no native payloads to harden (DEX/managed code is out of scope)"
     n = s["payload_count"]
-    return (f"harden the {n} native payload(s): `carapace harden <container>` "
+    return (f"harden the {n} native payload(s): `blue-harness harden <container>` "
             f"dispatches the per-format hardeners (ELF/Mach-O) and repacks — then "
-            f"RE-SIGN (apksigner/codesign; Carapace does not sign). "
+            f"RE-SIGN (apksigner/codesign; blue-harness does not sign). "
             f"The only Strong tier is server-side relocation (CLAUDE.md §3).")
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Carapace mobile-container exposure audit (APK/AAB/IPA; read-only).")
+        description="blue-harness mobile-container exposure audit (APK/AAB/IPA; read-only).")
     ap.add_argument("container", help="path to the .apk / .aab / .ipa (any ZIP)")
     ap.add_argument("--json", action="store_true", help="emit machine-readable JSON only")
     args = ap.parse_args(argv)
     try:
         s = analyze(args.container)
     except (ContainerError, FileNotFoundError, zipfile.BadZipFile) as e:
-        print(f"carapace-mobile-audit error: {e}", file=sys.stderr)
+        print(f"blue-harness-mobile-audit error: {e}", file=sys.stderr)
         return 2
     if args.json:
         print(json.dumps(s, indent=2))

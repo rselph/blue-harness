@@ -15,7 +15,7 @@
   faked.
 - Competitive scan done (2026-11-05): `research/findings/2026-11-05-competitive-landscape.md`
   — peers now defend against AI-RE (BLA ~2.3k★ the serious one). Operator decision:
-  **absorb their good ideas into Carapace** ("engulf"), keeping our native-depth +
+  **absorb their good ideas into blue-harness** ("engulf"), keeping our native-depth +
   mechanism-proof edge. Absorb ideas, not their MIT code (clean-room).
 - Worked specimen: **`rea`** (morluto/rea, npm `rea-agents`) — the P0 reference.
 - **2026-11-12 — PR #3 merged to `main`** (merge `d10d0cb`, branch deleted). Slice P
@@ -54,13 +54,13 @@
     Go/Rust/PyInstaller/UPX metadata, **core-dump & anti-ptrace guard present?**);
     emits a scored, tiered posture report + next highest-value hardening (`--json`
     for machines). Honest: labels itself heuristic, never "unbreakable."
-  - **Harden:** `harness/harden/carapace_guards.{c,h}` — core-dump suppression
+  - **Harden:** `harness/harden/bh_guards.{c,h}` — core-dump suppression
     (`setrlimit(RLIMIT_CORE,0)`+`prctl(PR_SET_DUMPABLE,0)`; denies rea **Cluster
     E**, tier *Speed-bump*) and anti-ptrace (TracerPid read **then**
     `PTRACE_TRACEME` slot-claim; denies **Cluster G/H**, tier *Meaningful*). Each
     carries its named bypass in-file.
   - **Sample:** `harness/sample/sample_app.c`+`Makefile` — one source, two builds
-    (`sample_baseline` vs `sample_hardened` via `-DCARAPACE_HARDENED`) so the
+    (`sample_baseline` vs `sample_hardened` via `-DBH_HARDENED`) so the
     audit flip is attributable to the guards alone.
   - **Verify:** `harness/verify/test_slice_a.sh` (+ `ptrace_attach_probe.c`) —
     **15/15 hard assertions pass**: audit flips absent↔present (score 84→60);
@@ -77,7 +77,7 @@
     symbols that read as English words vs opaque, plus an informative-string
     count. Reported separately; does **not** alter the Slice-A exposure score.
     Factored a shared `own_symbols()` so audit and transform agree on scope.
-  - **Harden:** `harness/harden/carapace_identity_transform.py` — operates on the
+  - **Harden:** `harness/harden/bh_identity_transform.py` — operates on the
     compiled ELF via `objcopy`/`strip` with modes **S** (strip symtab+DWARF),
     **M** (opaque `cp_NNNNNN` + reversible map), **D** (plausible decoy names from
     `decoy_dictionary.txt` + reversible map); plus an opt-in **same-length**
@@ -97,7 +97,7 @@
     strings, behavior-guarded by the verify.
 
 - **Implementation — Slice C ✅ (the drive-the-harness skill).** In `skill/`:
-  - `skill/carapace.py` — deterministic driver over `harness/`: `audit` (full
+  - `skill/blue_harness.py` — deterministic driver over `harness/`: `audit` (full
     exposure report), `recommend [--all] [--json]` (next highest-value hardening
     with a strength tier + a **named bypass** on every item, ordered plan ending
     in the server-relocation Strong-tier truth), and `apply` (runs the post-build
@@ -106,7 +106,7 @@
   - `skill/SKILL.md` — the Claude skill: frontmatter + the audit→recommend→apply
     loop and the non-negotiable honesty rules (audit-first, tier+bypass verbatim,
     server-side truth, never "unbreakable"). Install by symlinking `skill/` to
-    `.claude/skills/carapace/`.
+    `.claude/skills/blue-harness/`.
   - **Verify:** `harness/verify/test_slice_c.sh` — **9/9 pass**: the loop runs,
     every recommendation carries a tier + bypass and never overclaims, `apply`
     fires the post-build hardening (app still runs), the recommendation advances
@@ -116,9 +116,9 @@
 - **Implementation — Slice D ✅ (runtime integrity/attestation + anti-Frida; rea
   Cluster G).** In `harness/` (libc-only C — self-contained SHA-256/HMAC, no
   OpenSSL; stdlib-only Python server):
-  - **Harden:** `harness/harden/carapace_integrity.{c,h}` — SHA-256 of a hot
+  - **Harden:** `harness/harden/bh_integrity.{c,h}` — SHA-256 of a hot
     function's loaded bytes + `HMAC(key, nonce || checksum)` attestation;
-    `carapace_antifrida.{c,h}` — maps/thread-name/port-27042 (connect-probe) Frida
+    `bh_antifrida.{c,h}` — maps/thread-name/port-27042 (connect-probe) Frida
     scan; `harness/harden/attest_server.py` — reference server-nonce verifier.
     Tiers: anti-Frida *Meaningful*; integrity *Meaningful→Strong* (server-nonce
     binding), bypasses named in-file.
@@ -132,7 +132,7 @@
     MAC == stdlib `hmac`); patched hot-fn → server REJECT; replay → REJECT; patched
     app still runs; anti-Frida clean→clean and planted→maps+threads+port27042.
   - **Skill:** wired `antifrida-detector` + `integrity-attestation` into
-    `skill/carapace.py`'s recommendation policy (present guards aren't re-recommended).
+    `skill/blue_harness.py`'s recommendation policy (present guards aren't re-recommended).
 
 - **Implementation — Slice E ✅ (public front door + one-command demo).**
   - Repo-root `Makefile`: `make demo` (measure → prove in ~30s), `make verify`,
@@ -140,7 +140,7 @@
   - `harness/verify/run_all.sh`: runs every slice and prints ONE consolidated
     posture summary (**65/65** across A–E), honest footer (proves they *fire*,
     not that they're unbreakable; each has a named bypass).
-  - `skill/carapace.py report <bin>`: full audit + ordered hardening plan in one
+  - `skill/blue_harness.py report <bin>`: full audit + ordered hardening plan in one
     call. Reworded the honest footer to lead with the negation.
   - Refreshed `README.md` (quickstart, "what's built" tiers+bypasses table,
     honest "what it is / isn't", updated status) — no more "early scaffolding".
@@ -149,9 +149,9 @@
 
 - **Implementation — Slice F ✅ (build-time string encryption + runtime decode
   loader).** Closed the one gap the skill labelled *roadmap*:
-  - **Harden:** `harness/harden/carapace_string_encrypt.py` (codegen: manifest →
+  - **Harden:** `harness/harden/bh_string_encrypt.py` (codegen: manifest →
     encrypted C byte tables, position-dependent xorshift32 keystream, enc|plain
-    modes) + `harness/harden/carapace_strings.{c,h}` (runtime decode-on-demand
+    modes) + `harness/harden/bh_strings.{c,h}` (runtime decode-on-demand
     loader, byte-identical keystream). Manifest `harness/sample/secret_strings.json`
     is the dev source of truth; the shipped binary carries only ciphertext.
   - **Audit:** `string_encryption_present` (enc-mode marker symbol — a name, not a
@@ -208,10 +208,10 @@
 - **Implementation — Slice I ✅ (analysis-surface Exhaust; 14/14; now 122/122
   across 9 slices).** Absorbed the peers' "Exhaust" axis into our native lane,
   mechanism-proven (not a size diff):
-  - **Harden:** `harness/harden/carapace_exhaust.py` — post-build `objcopy` pass,
-    two non-breaking levers: decoy **non-alloc** sections (`.carapace_exh_*`,
+  - **Harden:** `harness/harden/bh_exhaust.py` — post-build `objcopy` pass,
+    two non-breaking levers: decoy **non-alloc** sections (`.bh_exh_*`,
     SHF_ALLOC clear → never mapped at runtime) + synthetic **LOCAL FUNC** symbols
-    (`carapace_exh_fn_*`, `.symtab` only → exports/`.dynsym` untouched).
+    (`bh_exh_fn_*`, `.symtab` only → exports/`.dynsym` untouched).
     Deterministic (seeded) for reproducible builds.
   - **Audit:** `exhaustion_present` + measured `exhaust_decoy_bytes` /
     `exhaust_synth_symbols` / `nonalloc_byte_ratio` (guards section, not the main
@@ -228,9 +228,9 @@
 
 - **Implementation — Slice J ✅ (honeytokens / canaries; Poison + attribution;
   15/15; now 137/137 across 10 slices).** The Poison/Hallucinate play, our way:
-  - **Harden:** `harness/harden/carapace_honeytokens.py` — `plant` drops N
+  - **Harden:** `harness/harden/bh_honeytokens.py` — `plant` drops N
     plausible, format-valid FAKE secrets (AWS-style keys, bearer tokens, internal
-    URLs, DB creds) into a non-alloc section (default `.carapace_honey`; never
+    URLs, DB creds) into a non-alloc section (default `.bh_honey`; never
     mapped → byte-identical runtime, provably unreferenced decoys) yet
     strings-visible, and writes a **private ledger** (unique token values per
     build). `check` matches a leaked token back to its exact build (canary).
@@ -251,12 +251,12 @@
 - **Implementation — Slice L ✅ (one-command `harden` + skill `install`; UX parity;
   17/17; now 154/154 across 11 slices).** Closed the ergonomics gap vs the peers'
   `npx … harden .`, honestly:
-  - **Skill:** `skill/carapace.py harden <bin>` chains every applicable POST-BUILD
+  - **Skill:** `skill/blue_harness.py harden <bin>` chains every applicable POST-BUILD
     pass in a safe order (identity decoy → exhaust → honeytokens), writes
     `<bin>.hardened` + the PRIVATE map/ledger, then prints the build-time guards it
     did **not** apply (with the rebuild step) and the server-side Strong tier — it
-    never fakes a build-time guard. `carapace install [--user|--dir]` symlinks the
-    skill into `.claude/skills/carapace` (idempotent; refuses to clobber a real dir).
+    never fakes a build-time guard. `blue-harness install [--user|--dir]` symlinks the
+    skill into `.claude/skills/blue-harness` (idempotent; refuses to clobber a real dir).
   - **Front door:** `make harden BIN=…` and `make install-skill`.
   - **Verify:** `harness/verify/test_slice_l.sh` (**17/17**) — harden applies all 3
     post-build passes (map + exhaustion + honeytokens present), runtime
@@ -273,7 +273,7 @@
   owned `rea` VM — no offensive tooling in the dev container):
   - **CrackMe:** `harness/crackme/` — one source, two builds (`crackme_baseline`
     flag plaintext / `crackme_hardened` flag string-encrypted + build-time guards +
-    post-build `carapace harden`). Flag plaintext never committed (env/`secret.local
+    post-build `blue-harness harden`). Flag plaintext never committed (env/`secret.local
     .txt`/labelled default); `seal.py` publishes only `SEAL.json` (the digest).
   - **Scorer:** `harness/measure/rea_measure.py` — honest by construction: a crack
     counts only if it hashes to the seal; tokens/wall are agent-reported and absent
@@ -293,7 +293,7 @@
   `make audit-pe`; now the skill detects the format by magic byte and routes the
   one front door:
   - **Skill:** `_detect_format` (ELF `\x7fELF` / PE `MZ` / Mach-O magics) drives
-    `carapace audit`/`report`/`recommend` to the right scanner; PE renders the PE
+    `blue-harness audit`/`report`/`recommend` to the right scanner; PE renders the PE
     audit + the format-independent server-side Strong truth. `apply`/`harden`
     **refuse** a non-ELF with guidance (rc 3) rather than mangling it — the ELF
     transforms are not pretended onto a PE. Unknown blobs error cleanly (rc 2, no
@@ -325,7 +325,7 @@
 - **Implementation — Slice O ✅ (Mach-O local-symbol strip — first Mach-O harden;
   15/15; now 223/223 across 15 slices).** The Mach-O analog of the ELF identity
   strip, platform-honest:
-  - **Harden:** `harness/harden/carapace_macho_strip.py` — byte-level `strip -x`
+  - **Harden:** `harness/harden/bh_macho_strip.py` — byte-level `strip -x`
     (no Apple/LLVM toolchain): removes LOCAL/static symbols via `LC_SYMTAB` +
     `LC_DYSYMTAB`, preserves external/undefined (dyld needs them), keeps all load
     commands/segments/sections and **file offsets stable** (in-place, size
@@ -333,7 +333,7 @@
     if code-signed (strip → codesign order). Deterministic.
   - **Fixture:** `macho_fixture.py` now emits `LC_DYSYMTAB` + a local/external
     split so the strip is meaningful and testable.
-  - **Skill:** `carapace apply <macho>` now dispatches to the strip (ELF `apply`
+  - **Skill:** `blue-harness apply <macho>` now dispatches to the strip (ELF `apply`
     unchanged; `harden` full-chain stays ELF-only). `make harden-macho BIN=…`.
   - **Verify:** `harness/verify/test_slice_o.sh` (**15/15**) — locals gone +
     externals preserved; symbol_count 6→2; size stable; segments/sections/dylibs
@@ -349,21 +349,21 @@
   post-build harden path with three provable, non-breaking levers, all proven
   STRUCTURALLY / byte-level on Linux with NO Windows host (same discipline as the
   Slice O Mach-O strip):
-  - **Harden:** `harness/harden/carapace_pe_strip.py` — COFF symbol table + debug
+  - **Harden:** `harness/harden/bh_pe_strip.py` — COFF symbol table + debug
     directory / CodeView PDB-path strip, **in-place, size stable**, proven surgical
     (only symbol/debug metadata bytes change; imports/exports/entry/sections/
-    `SizeOfImage` byte-identical). `harness/harden/carapace_pe_exhaust.py` — decoy
+    `SizeOfImage` byte-identical). `harness/harden/bh_pe_exhaust.py` — decoy
     **non-mapped OVERLAY** regions (append-only; past every section's raw end, so
-    the loader never maps them). `harness/harden/carapace_pe_honeytokens.py` —
+    the loader never maps them). `harness/harden/bh_pe_honeytokens.py` —
     plausible fake secrets into the overlay + a **private ledger** (poison +
     attribution; token generators shared with the ELF Slice J).
   - **Audit:** `pe_exposure_audit.py` gains `decoy_overlay_present` +
     `honeytokens_present` (guards line; not scored) and its PDB recommendation now
-    points at `carapace_pe_strip.py`.
+    points at `bh_pe_strip.py`.
   - **Fixture:** `pe_fixture.py` gains an `exposed` profile + `--coff-symbols`/
     `--signed` overrides so the strip has a COFF symbol table AND a PDB to remove
     (soft/hard/packed defaults untouched).
-  - **Skill:** `carapace apply <pe>` → the strip; `carapace harden <pe>` → the full
+  - **Skill:** `blue-harness apply <pe>` → the strip; `blue-harness harden <pe>` → the full
     chain (strip → decoy overlay → honeytokens), writing a separate output + the
     private ledger, then honestly listing the build-time levers NOT applied (relink
     `/DYNAMICBASE /NXCOMPAT /GUARD:CF`, string encryption, runtime+server
@@ -388,21 +388,21 @@
   strip; Slice Q adds the two remaining post-build levers as Mach-O-native constructs,
   all proven STRUCTURALLY / byte-level on Linux with NO macOS host (same discipline as
   Slice O and the PE path, Slice P):
-  - **Harden:** `harness/harden/carapace_macho_segment.py` — shared mechanism:
+  - **Harden:** `harness/harden/bh_macho_segment.py` — shared mechanism:
     `append_trailer` (decoy/honey bytes appended past `mapped_end` → non-mapped, the
     Mach-O analog of the PE overlay) + `add_decoy_segment` (splice a real
-    `LC_SEGMENT_64 __CARAPACE_EXH` with **`vmsize=0`** — dyld IGNORES it → maps nothing
+    `LC_SEGMENT_64 __BH_EXH` with **`vmsize=0`** — dyld IGNORES it → maps nothing
     — into the header pad **in place**, or fall back to trailer-only with the
     `-headerpad_max_install_names` remedy when there is < 72 B of pad; never corrupts).
-    `carapace_macho_exhaust.py` (decoy non-mapped segment + bulk decoy trailer) and
-    `carapace_macho_honeytokens.py` (plausible fake secrets in the non-mapped trailer +
+    `bh_macho_exhaust.py` (decoy non-mapped segment + bulk decoy trailer) and
+    `bh_macho_honeytokens.py` (plausible fake secrets in the non-mapped trailer +
     a **private ledger**; token generators shared with the ELF Slice J / PE Slice P).
   - **Audit:** `macho_exposure_audit.py` gains `decoy_segment_present` +
-    `carapace_segment_count` + `honeytokens_present` (guards line; not scored) and its
+    `bh_segment_count` + `honeytokens_present` (guards line; not scored) and its
     `recommend()` now chains strip → decoy segment → honeytokens.
   - **Fixture:** `macho_fixture.py` gains `--headerpad N` (room to splice a load command
     in place) + `--signed` override (defaults preserve the Slice N/O fixtures byte-for-byte).
-  - **Skill:** `carapace apply <macho>` = strip (unchanged); `carapace harden <macho>` =
+  - **Skill:** `blue-harness apply <macho>` = strip (unchanged); `blue-harness harden <macho>` =
     the full chain (strip → decoy segment + trailer → honeytokens), writing a separate
     output + the private ledger, then honestly listing the build-time levers NOT applied
     (-fPIE/-pie + `__RESTRICT`, string-encryption codegen, runtime+server code signing)
@@ -435,8 +435,8 @@
     (`elf_exposure_audit`) / Mach-O (`macho_exposure_audit`, Slice N) auditor for a
     per-payload scored posture. Read-only, pure-Python → cross-platform.
     `make audit-mobile BIN=…`.
-  - **Harden:** `harness/harden/carapace_mobile.py` — for each payload, dispatch
-    through the **stable Slice-M format entry point** (`skill/carapace.py harden`,
+  - **Harden:** `harness/harden/bh_mobile.py` — for each payload, dispatch
+    through the **stable Slice-M format entry point** (`skill/blue_harness.py harden`,
     rc-3 fallback to `apply`) so it uses whatever each format hardener offers and
     **auto-picks-up new levers once merged** (e.g. Slice Q's Mach-O decoy/
     honeytokens) — **no lever hard-coded**. Collects the PRIVATE map/ledger sidecars
@@ -566,7 +566,7 @@ are **operator decisions / operator-gated actions**, not pending build work.
   20/20) **and run for real (2026-11-11)**: baseline cracked vs hardened not
   (13.4× tokens, 121.9× wall) — see open item 1 and
   `research/findings/2026-11-11-slice-k-empirical-run.md`.
-- **Slice L — one-command `carapace harden` + skill `install`** — ✅ done (UX
+- **Slice L — one-command `blue-harness harden` + skill `install`** — ✅ done (UX
   parity with `npx … harden .`, without faking build-time guards).
 - **Slice S — Slice-K re-run harness (one command + tool-call fix)** — ✅ done: the
   empirical re-run is now `make slice-k-run`, the JSON-as-text tool-call friction is

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — Slice S: the ONE-COMMAND empirical re-run driver.
+# blue-harness — Slice S: the ONE-COMMAND empirical re-run driver.
 #
 # WHAT THIS IS
 #   The 2026-11-11 Slice-K run was a parked, manual procedure (build on the scoring
@@ -72,7 +72,7 @@ def _run_variant(args, variant, binary):
 
 def _dry_run(args):
     print("=" * 66)
-    print("  Carapace Slice S — DRY RUN (no agent launched, no network touched)")
+    print("  blue-harness Slice S — DRY RUN (no agent launched, no network touched)")
     print("=" * 66)
     print(f"  backend ........ {args.backend}")
     if args.backend == "ollama":
@@ -93,7 +93,7 @@ def _dry_run(args):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Carapace Slice S — one-command empirical re-run (honest).")
+        description="blue-harness Slice S — one-command empirical re-run (honest).")
     ap.add_argument("--backend", choices=("mock", "ollama"), default="mock")
     ap.add_argument("--model", help="attacker model name (ollama backend)")
     ap.add_argument("--target", default="http://127.0.0.1:11434",

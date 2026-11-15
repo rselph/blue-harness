@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice O (Mach-O LOCAL-symbol strip — first Mach-O harden).
+# blue-harness — VERIFY harness for Slice O (Mach-O LOCAL-symbol strip — first Mach-O harden).
 #
 # We cannot RUN a Mach-O on Linux, so this proves the transform is SURGICAL and
 # correct STRUCTURALLY (runtime-identical is platform-gated to a macOS host — the
@@ -11,7 +11,7 @@
 #   (D) deterministic;
 #   (E) honest: the tool prints the runtime-identical caveat; refuses safely when
 #       there is no LC_DYSYMTAB / nothing to strip;
-#   (F) the skill drives it (`carapace apply` on a Mach-O).
+#   (F) the skill drives it (`blue-harness apply` on a Mach-O).
 #
 # Exit 0 = all hard assertions passed.
 set -u
@@ -20,8 +20,8 @@ REPO="$(cd ../.. && pwd)"
 SAMPLE_DIR="$(cd ../sample && pwd)"
 AUDIT="$REPO/harness/audit/macho_exposure_audit.py"
 FIX="$SAMPLE_DIR/macho_fixture.py"
-STRIP="$REPO/harness/harden/carapace_macho_strip.py"
-CARA="python3 $REPO/skill/carapace.py"
+STRIP="$REPO/harness/harden/bh_macho_strip.py"
+CARA="python3 $REPO/skill/blue_harness.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -77,9 +77,9 @@ python3 "$STRIP" --in "$WORK/mo_fat" --out "$WORK/mo_fat.out" > "$WORK/fat.txt" 
 [ "$rc" -eq 2 ] && grep -qi "fat" "$WORK/fat.txt" && ok "refuses a fat/universal binary with guidance (rc 2)" || bad "fat not refused cleanly (rc=$rc)"
 
 hdr "(F) skill drives it"
-$CARA apply "$WORK/mo" --out "$WORK/mo.skill" > "$WORK/skill.txt" 2>&1 && ok "carapace apply ran on a Mach-O" || bad "carapace apply failed on Mach-O"
+$CARA apply "$WORK/mo" --out "$WORK/mo.skill" > "$WORK/skill.txt" 2>&1 && ok "blue-harness apply ran on a Mach-O" || bad "blue-harness apply failed on Mach-O"
 [ "$(python3 "$AUDIT" --json "$WORK/mo.skill" | python3 -c 'import json,sys;print(json.load(sys.stdin)["symbol_count"])')" = "2" ] \
-    && ok "carapace apply produced a locally-stripped Mach-O (6→2)" || bad "carapace apply did not strip"
+    && ok "blue-harness apply produced a locally-stripped Mach-O (6→2)" || bad "blue-harness apply did not strip"
 
 hdr "SUMMARY"
 echo "  PASS=$PASS  FAIL=$FAIL  SKIP=$SKIP"

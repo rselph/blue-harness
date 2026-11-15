@@ -1,4 +1,4 @@
-/* Carapace anti-Frida detector (Slice D).
+/* blue-harness anti-Frida detector (Slice D).
  *
  * Denies: rea Cluster G — Frida is rea's only in-process MODIFICATION path
  * (start_frida_session + load_frida_script). This scans the process for the
@@ -14,26 +14,26 @@
  * signatures once found. Combine with the anti-ptrace guard and server-nonce
  * integrity attestation — no single client check is sufficient.
  */
-#ifndef CARAPACE_ANTIFRIDA_H
-#define CARAPACE_ANTIFRIDA_H
+#ifndef BH_ANTIFRIDA_H
+#define BH_ANTIFRIDA_H
 
 #include <stddef.h>
 
-#define CARAPACE_FRIDA_MAPS    0x1
-#define CARAPACE_FRIDA_THREADS 0x2
-#define CARAPACE_FRIDA_PORT    0x4
+#define BH_FRIDA_MAPS    0x1
+#define BH_FRIDA_THREADS 0x2
+#define BH_FRIDA_PORT    0x4
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Scan the current process. Returns a bitmask of CARAPACE_FRIDA_* (0 = clean).
+/* Scan the current process. Returns a bitmask of BH_FRIDA_* (0 = clean).
  * If detail != NULL, writes a short human-readable reason (which signals fired).
  */
-int carapace_antifrida_scan(char *detail, size_t detail_len);
+int bh_antifrida_scan(char *detail, size_t detail_len);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CARAPACE_ANTIFRIDA_H */
+#endif /* BH_ANTIFRIDA_H */

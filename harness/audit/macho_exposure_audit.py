@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — Mach-O exposure audit (read-only). The third format (Slice N).
+# blue-harness — Mach-O exposure audit (read-only). The third format (Slice N).
 #
 # A self-contained Mach-O parser (no macholib / no Apple toolchain) that reads the
 # same signals an AI-assisted RE agent (e.g. rea) reads for free from a Mach-O —
@@ -242,13 +242,13 @@ def analyze(path):
     if high_entropy and not packer and not encrypted:
         packer.append("high-entropy (possible packing)")
 
-    # Carapace post-build levers (Slice Q): a decoy non-mapped segment (an added
-    # LC_SEGMENT_64 named __CARAPACE* with vmsize=0, and/or a decoy trailer marker) and
+    # blue-harness post-build levers (Slice Q): a decoy non-mapped segment (an added
+    # LC_SEGMENT_64 named __BH_* with vmsize=0, and/or a decoy trailer marker) and
     # honeytokens in the non-mapped trailer. Detected, never scored — they are
     # COST/DETECTION, not an exposure change (mirrors the ELF/PE guards line).
-    carapace_segs = [sg for sg, _ in m.segments if sg.startswith("__CARAPACE")]
-    decoy_segment_present = bool(carapace_segs) or (b"__CARAPACE_MACHO_EXH_" in d)
-    honeytokens_present = b"__CARAPACE_MACHO_HONEY__" in d
+    bh_segs = [sg for sg, _ in m.segments if sg.startswith("__BH_")]
+    decoy_segment_present = bool(bh_segs) or (b"__BH_MACHO_EXH_" in d)
+    honeytokens_present = b"__BH_MACHO_HONEY__" in d
 
     s = {
         "file": os.path.basename(path),
@@ -271,7 +271,7 @@ def analyze(path):
         "dylib_count": len(m.dylibs),
         "packer": packer,
         "decoy_segment_present": decoy_segment_present,
-        "carapace_segment_count": len(carapace_segs),
+        "bh_segment_count": len(bh_segs),
         "honeytokens_present": honeytokens_present,
     }
     s["score"], s["tier"], s["recommendation"] = score(s)
@@ -318,22 +318,22 @@ def score(s):
 def recommend(s):
     h = s["hardening"]
     if s["symbols_present"]:
-        return ("Strip LOCAL/static symbols (harness/harden/carapace_macho_strip.py, or "
-                "`carapace apply`) and don't ship a companion dSYM — Tier: Speed-bump→Meaningful. "
+        return ("Strip LOCAL/static symbols (harness/harden/bh_macho_strip.py, or "
+                "`blue-harness apply`) and don't ship a companion dSYM — Tier: Speed-bump→Meaningful. "
                 "Bypass: exported names remain (dyld needs them); the agent reasons from behavior.")
     if not s.get("decoy_segment_present"):
         return ("Inflate the analysis surface: add a decoy NON-MAPPED segment + trailer "
-                "(harness/harden/carapace_macho_exhaust.py, or `carapace harden`). "
+                "(harness/harden/bh_macho_exhaust.py, or `blue-harness harden`). "
                 "Tier: Trivial→Speed-bump. Bypass: a loader-faithful tool reads only mapped "
                 "segments and drops vmsize==0 LCs + the trailer. COST, not prevention.")
     if not s.get("honeytokens_present"):
         return ("Plant honeytokens / canaries in the non-mapped trailer + a PRIVATE ledger "
-                "(harness/harden/carapace_macho_honeytokens.py, or `carapace harden`). "
+                "(harness/harden/bh_macho_honeytokens.py, or `blue-harness harden`). "
                 "Tier: Speed-bump (poison) / Meaningful FOR DETECTION (attribution). "
                 "Bypass: xref-validate drops unreferenced tokens; rename the marker for production.")
     if s["string_density"] >= 0.05:
         return ("Encrypt / decode-on-demand high-density plaintext strings "
-                "(see harness/harden/carapace_string_encrypt.py). Tier: Speed-bump→Meaningful. "
+                "(see harness/harden/bh_string_encrypt.py). Tier: Speed-bump→Meaningful. "
                 "Bypass: runtime key recovery from memory.")
     if not h["pie"]:
         return ("Build position-independent (-fPIE -pie) so load addresses vary. "
@@ -352,7 +352,7 @@ def render(s):
         return y if b else n
     L = []
     L.append("=" * 68)
-    L.append(f"  Carapace Mach-O Exposure Audit — {s['file']}  "
+    L.append(f"  blue-harness Mach-O Exposure Audit — {s['file']}  "
              f"[{s['format']} / {s['machine']} / {s['filetype']}]")
     if s["fat_slices"] > 1:
         L.append(f"  (fat/universal: {s['fat_slices']} slices — audited the first)")
@@ -375,7 +375,7 @@ def render(s):
              f"__RESTRICT={yn(h['restrict_segment'])} | __TEXT-encrypted={yn(h['encrypted'])}")
     L.append(f"    code signature present (READ-ONLY, not verified): {yn(s['code_signature_present'])}")
     L.append(f"    build UUID present: {yn(s['uuid_present'])}")
-    L.append(f"    Carapace levers ........ decoy-segment={yn(s.get('decoy_segment_present', False))}; "
+    L.append(f"    blue-harness levers ........ decoy-segment={yn(s.get('decoy_segment_present', False))}; "
              f"honeytokens={yn(s.get('honeytokens_present', False))}  (post-build; COST/DETECTION, not scored)")
     L.append("")
     L.append("  Exposure drivers:")
@@ -394,7 +394,7 @@ def render(s):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Carapace Mach-O exposure audit (read-only).")
+    ap = argparse.ArgumentParser(description="blue-harness Mach-O exposure audit (read-only).")
     ap.add_argument("binary")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)

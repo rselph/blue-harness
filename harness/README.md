@@ -1,4 +1,4 @@
-# harness/ — the Carapace hardening & audit harness
+# harness/ — the blue-harness hardening & audit harness
 
 The tool an operator runs against **their own** native/mobile build. Three parts
 (audit-first, per CLAUDE.md):
@@ -18,14 +18,14 @@ harness/
   audit/   elf_exposure_audit.py          — read-only ELF exposure scanner
                                             (scored/tiered + informativeness)
            pe_exposure_audit.py           — read-only Windows PE exposure scanner (Slice G)
-  harden/  carapace_guards.{c,h}          — core-dump + anti-ptrace guards (Slice A)
-           carapace_identity_transform.py — dev<->release S/M/D transform (Slice B)
+  harden/  bh_guards.{c,h}          — core-dump + anti-ptrace guards (Slice A)
+           bh_identity_transform.py — dev<->release S/M/D transform (Slice B)
            decoy_dictionary.txt           — plausible decoy names for Mode D
-           carapace_integrity.{c,h}       — code-integrity + attestation (Slice D)
-           carapace_antifrida.{c,h}       — anti-Frida detector (Slice D)
+           bh_integrity.{c,h}       — code-integrity + attestation (Slice D)
+           bh_antifrida.{c,h}       — anti-Frida detector (Slice D)
            attest_server.py               — reference server-nonce verifier (Slice D)
-           carapace_string_encrypt.py     — build-time string-encryption codegen (Slice F)
-           carapace_strings.{c,h}         — runtime decode-on-demand loader (Slice F)
+           bh_string_encrypt.py     — build-time string-encryption codegen (Slice F)
+           bh_strings.{c,h}         — runtime decode-on-demand loader (Slice F)
   sample/  sample_app.c, sample_attest.c, sample_strings.c — samples (+ Makefile)
            pe_fixture.py                  — minimal PE32+ generator for the PE audit (Slice G)
   verify/  test_slice_a.sh                — audit flips + both guards fire (15/15)

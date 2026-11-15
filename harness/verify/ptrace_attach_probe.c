@@ -1,4 +1,4 @@
-/* Carapace verify helper — deterministic PTRACE_ATTACH probe.
+/* blue-harness verify helper — deterministic PTRACE_ATTACH probe.
  *
  * Stands in for "a debugger / Frida tries to attach" (both attach via ptrace on
  * Linux). Deterministic exit codes instead of parsing gdb output:

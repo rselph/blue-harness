@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice Q (Mach-O harden DEPTH — parity with ELF/PE).
+# blue-harness — VERIFY harness for Slice Q (Mach-O harden DEPTH — parity with ELF/PE).
 #
 # Slice O gave Mach-O a local-symbol strip. Slice Q adds the two remaining post-build
 # levers as Mach-O-native constructs, proven STRUCTURALLY / byte-level on Linux with NO
 # macOS host (exactly how Slice O/P are proven):
 #   (A) DECOY NON-MAPPED SEGMENT + trailer (exhaust) — audit flips absent→present; a real
-#       LC_SEGMENT_64 __CARAPACE_EXH with vmsize=0 is spliced into the header pad IN PLACE
+#       LC_SEGMENT_64 __BH_EXH with vmsize=0 is spliced into the header pad IN PLACE
 #       (surgical: only the mach-header counts + the consumed zero pad change); the decoy
 #       trailer sits past mapped_end (non-mapped); the added segment maps nothing (vmsize=0).
 #   (B) HONEYTOKENS — audit flips absent→present; tokens unique + plausible (AKIA) +
 #       whole-file-strings visible; append-only; attributable via a PRIVATE ledger; inert.
-#   (C) the skill drives it (`carapace apply` = strip; `carapace harden` = all three).
+#   (C) the skill drives it (`blue-harness apply` = strip; `blue-harness harden` = all three).
 #   (D) honest: tier+bypass on every lever, macOS-host caveat printed, fat/32-bit/non-Mach-O
 #       refused cleanly, code-signature warnings, no "unbreakable"; and the no-header-pad
 #       case falls back to a trailer-only decoy with the -headerpad remedy (not a silent skip).
@@ -23,10 +23,10 @@ REPO="$(cd ../.. && pwd)"
 HARDEN_DIR="$REPO/harness/harden"
 AUDIT="$REPO/harness/audit/macho_exposure_audit.py"
 FIX="$REPO/harness/sample/macho_fixture.py"
-EXH="$HARDEN_DIR/carapace_macho_exhaust.py"
-HONEY="$HARDEN_DIR/carapace_macho_honeytokens.py"
-STRIP="$HARDEN_DIR/carapace_macho_strip.py"
-CARA="python3 $REPO/skill/carapace.py"
+EXH="$HARDEN_DIR/bh_macho_exhaust.py"
+HONEY="$HARDEN_DIR/bh_macho_honeytokens.py"
+STRIP="$HARDEN_DIR/bh_macho_strip.py"
+CARA="python3 $REPO/skill/blue_harness.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -53,13 +53,13 @@ python3 "$EXH" "$WORK/mo" "$WORK/mo.exh" --regions 4 --region-size 8192 > "$WORK
 python3 "$AUDIT" --json "$WORK/mo.exh" > "$WORK/exh.json"
 [ "$(jget "$WORK/before.json" decoy_segment_present)" = "False" ] && ok "before: no decoy segment" || bad "pre-exhaust flag wrong"
 [ "$(jget "$WORK/exh.json"    decoy_segment_present)" = "True"  ] && ok "after:  decoy segment present" || bad "post-exhaust flag wrong"
-[ "$(jget "$WORK/exh.json"    carapace_segment_count)" = "1" ] && ok "exactly one added __CARAPACE segment (load command spliced)" || bad "decoy segment LC not added"
+[ "$(jget "$WORK/exh.json"    bh_segment_count)" = "1" ] && ok "exactly one added __BH_ segment (load command spliced)" || bad "decoy segment LC not added"
 
 # the added LC_SEGMENT_64 maps NOTHING (vmsize==0, initprot==maxprot==0)
 python3 - "$WORK/mo.exh" "$HARDEN_DIR" <<'PY' && ok "added segment has vmsize==0 + prot NONE (dyld ignores it → maps nothing)" || bad "decoy segment is not inert (vmsize/prot not zero)"
 import sys, struct
 sys.path.insert(0, sys.argv[2])
-import carapace_macho_segment as seg
+import bh_macho_segment as seg
 d = open(sys.argv[1], "rb").read()
 v = seg.MachOView(d); e = v.e
 off = v.hdr; found = None
@@ -68,7 +68,7 @@ for _ in range(v.ncmds):
     sz  = struct.unpack_from(e+"I", d, off+4)[0]
     if cmd == seg.LC_SEGMENT_64:
         name = d[off+8:off+24].split(b"\x00")[0].decode("latin-1")
-        if name.startswith("__CARAPACE"):
+        if name.startswith("__BH_"):
             vmsize   = struct.unpack_from(e+"Q", d, off+32)[0]
             maxprot  = struct.unpack_from(e+"i", d, off+56)[0]
             initprot = struct.unpack_from(e+"i", d, off+60)[0]
@@ -83,7 +83,7 @@ PY
 python3 - "$WORK/mo" "$WORK/mo.exh" "$HARDEN_DIR" <<'PY' && ok "surgical splice: every changed in-file byte is a header count or the consumed zero pad" || bad "a byte changed outside the allowed splice region"
 import sys
 sys.path.insert(0, sys.argv[3])
-import carapace_macho_segment as seg
+import bh_macho_segment as seg
 a = open(sys.argv[1], "rb").read()
 b = open(sys.argv[2], "rb").read()
 v = seg.MachOView(a)
@@ -101,11 +101,11 @@ PY
 python3 - "$WORK/mo" "$WORK/mo.exh" "$HARDEN_DIR" <<'PY' && ok "decoy trailer sits at original EOF, past mapped_end (non-mapped)" || bad "decoy trailer not provably non-mapped"
 import sys
 sys.path.insert(0, sys.argv[3])
-import carapace_macho_segment as seg
+import bh_macho_segment as seg
 a = open(sys.argv[1], "rb").read()
 b = open(sys.argv[2], "rb").read()
 me = seg.MachOView(a).mapped_end()
-marker = b.find(b"__CARAPACE_MACHO_EXH_")
+marker = b.find(b"__BH_MACHO_EXH_")
 sys.exit(0 if marker >= len(a) and marker >= me else 1)
 PY
 grew=$(python3 -c 'import sys;print(len(open(sys.argv[1],"rb").read())-len(open(sys.argv[2],"rb").read()))' "$WORK/mo.exh" "$WORK/mo")
@@ -143,11 +143,11 @@ sys.exit(0 if set(a).isdisjoint(b) else 1)' "$WORK/ledger.json" "$WORK/ledger2.j
 # =====================================================================(C) SKILL
 hdr "(C) SKILL drives it (apply = strip; harden = all three)"
 $CARA apply "$WORK/mo" --out "$WORK/mo.applied" > "$WORK/apply.txt" 2>&1 \
-    && ok "carapace apply ran on a Mach-O" || { bad "carapace apply failed"; cat "$WORK/apply.txt"; }
+    && ok "blue-harness apply ran on a Mach-O" || { bad "blue-harness apply failed"; cat "$WORK/apply.txt"; }
 [ "$(python3 "$AUDIT" --json "$WORK/mo.applied" | python3 -c 'import json,sys;print(json.load(sys.stdin)["symbol_count"])')" = "2" ] \
-    && ok "carapace apply stripped LOCAL symbols (6→2)" || bad "carapace apply did not strip"
+    && ok "blue-harness apply stripped LOCAL symbols (6→2)" || bad "blue-harness apply did not strip"
 $CARA harden "$WORK/mo" --out "$WORK/mo.hard" --build-tag CI-run > "$WORK/harden.txt" 2>&1 \
-    && ok "carapace harden ran on a Mach-O" || { bad "carapace harden failed"; cat "$WORK/harden.txt"; }
+    && ok "blue-harness harden ran on a Mach-O" || { bad "blue-harness harden failed"; cat "$WORK/harden.txt"; }
 python3 "$AUDIT" --json "$WORK/mo.hard" > "$WORK/hard.json"
 [ "$(jget "$WORK/hard.json" symbol_count)" = "2" ] && [ "$(jget "$WORK/hard.json" decoy_segment_present)" = "True" ] && [ "$(jget "$WORK/hard.json" honeytokens_present)" = "True" ] \
     && ok "harden applied all three (locals stripped + decoy segment + honeytokens)" || bad "harden did not apply all three passes"
@@ -180,7 +180,7 @@ python3 "$EXH" "$WORK/mo_nopad" "$WORK/mo_nopad.exh" --regions 1 --region-size 2
 grep -qi "NOT added" "$WORK/nopad.txt" && grep -qi "headerpad" "$WORK/nopad.txt" && ok "no-pad: load command honestly deferred with the -headerpad remedy" || bad "no-pad fallback not reported honestly"
 [ "$(python3 "$AUDIT" --json "$WORK/mo_nopad.exh" | python3 -c 'import json,sys;print(json.load(sys.stdin)["decoy_segment_present"])')" = "True" ] \
     && ok "no-pad: the decoy trailer is still present (marker detected)" || bad "no-pad: decoy trailer missing"
-[ "$(python3 "$AUDIT" --json "$WORK/mo_nopad.exh" | python3 -c 'import json,sys;print(json.load(sys.stdin)["carapace_segment_count"])')" = "0" ] \
+[ "$(python3 "$AUDIT" --json "$WORK/mo_nopad.exh" | python3 -c 'import json,sys;print(json.load(sys.stdin)["bh_segment_count"])')" = "0" ] \
     && ok "no-pad: no load command was spliced (count 0) — matches the honest report" || bad "no-pad: a segment was unexpectedly added"
 
 hdr "SUMMARY"

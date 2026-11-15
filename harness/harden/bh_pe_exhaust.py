@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — PE analysis-surface EXHAUSTION (Slice P): decoy NON-MAPPED regions.
+# blue-harness — PE analysis-surface EXHAUSTION (Slice P): decoy NON-MAPPED regions.
 #
 # WHAT THIS IS
 #   The PE analog of the ELF exhaust pass (Slice I). It inflates the volume of
@@ -40,7 +40,7 @@ import argparse
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "audit"))
 from pe_exposure_audit import PE, PEError  # noqa: E402
 
-MARKER = b"__CARAPACE_PE_EXH_"
+MARKER = b"__BH_PE_EXH_"
 
 
 def _det_bytes(seed, n):
@@ -91,7 +91,7 @@ def exhaust(src, dst, n_sections, section_size, seed=0xC0FFEE):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Carapace PE analysis-surface exhaustion (decoy NON-MAPPED overlay; "
+        description="blue-harness PE analysis-surface exhaustion (decoy NON-MAPPED overlay; "
                     "COST not prevention).")
     ap.add_argument("src")
     ap.add_argument("dst")
@@ -106,9 +106,9 @@ def main(argv=None):
     try:
         info = exhaust(a.src, a.dst, a.sections, a.section_size, a.seed)
     except (PEError, IsADirectoryError) as e:
-        print(f"carapace-pe-exhaust error: {e}", file=sys.stderr)
+        print(f"blue-harness-pe-exhaust error: {e}", file=sys.stderr)
         return 2
-    print(f"[carapace-pe-exhaust] {a.src} -> {a.dst}")
+    print(f"[blue-harness-pe-exhaust] {a.src} -> {a.dst}")
     print(f"  decoy regions ...... {info['decoy_regions']} "
           f"({info['decoy_bytes']} bytes) appended to the OVERLAY")
     print(f"  non-mapped proof ... decoy at offset {info['decoy_offset']} >= mapped_end "

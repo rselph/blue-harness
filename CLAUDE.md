@@ -13,7 +13,7 @@ harness** — plus a companion Claude **skill** that drives it — that an engin
 can run against **their own application build** to measure and raise its
 resistance to reverse engineering and tampering.
 
-Working name: **Carapace** (the hard protective shell). Rename freely.
+Name: **blue-harness** (renamed from the working name "Carapace" on 2026-11-15).
 
 One-line pitch: *"Make your own app expensive to reverse — measure it, harden it,
 prove it."*

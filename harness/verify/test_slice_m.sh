@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice M (format dispatch: route audit/report by magic).
+# blue-harness — VERIFY harness for Slice M (format dispatch: route audit/report by magic).
 #
 # The Slice-G PE scanner existed but was only reachable via `make audit-pe`. This
 # slice teaches the skill to detect the format by magic byte and route the one
@@ -9,7 +9,7 @@
 # refusing — the ELF-only transforms are never faked onto a PE.
 #
 # Proves:
-#   (A) `carapace audit` routes ELF→ELF scanner, PE→PE scanner;
+#   (A) `blue-harness audit` routes ELF→ELF scanner, PE→PE scanner;
 #   (B) `report`/`recommend` on a PE render the PE audit + the format-independent
 #       server-side truth, and never claim an ELF-only hardening;
 #   (C) `apply`/`harden` DISPATCH a PE to the PE hardener (rc 0) and leave the
@@ -22,7 +22,7 @@ set -u
 cd "$(dirname "$0")"
 REPO="$(cd ../.. && pwd)"
 SAMPLE_DIR="$(cd ../sample && pwd)"
-CARA="python3 $REPO/skill/carapace.py"
+CARA="python3 $REPO/skill/blue_harness.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -38,7 +38,7 @@ PE="$WORK/fixture.exe"
 python3 "$SAMPLE_DIR/pe_fixture.py" --profile soft --out "$PE" >/dev/null 2>&1 \
     && ok "PE fixture generated" || { bad "PE fixture failed"; exit 1; }
 
-hdr "(A) carapace audit routes by magic"
+hdr "(A) blue-harness audit routes by magic"
 $CARA audit "$ELF" > "$WORK/a_elf.txt" 2>&1
 grep -q "ELF Exposure Audit" "$WORK/a_elf.txt" && ok "ELF → ELF scanner" || bad "ELF not routed to ELF scanner"
 $CARA audit "$PE" > "$WORK/a_pe.txt" 2>&1
@@ -49,7 +49,7 @@ $CARA report "$PE" > "$WORK/r_pe.txt" 2>&1
 grep -q "PE Exposure Audit" "$WORK/r_pe.txt" && ok "report renders the PE audit" || bad "PE report missing the audit"
 grep -qi "server-side" "$WORK/r_pe.txt" && ok "report surfaces the server-side Strong truth" || bad "server-side truth missing on PE"
 # must NOT claim an ELF-only build-time guard was applicable here
-grep -qi "carapace_guards.c\|PTRACE_TRACEME\|core-dump suppression guard" "$WORK/r_pe.txt" \
+grep -qi "bh_guards.c\|PTRACE_TRACEME\|core-dump suppression guard" "$WORK/r_pe.txt" \
     && bad "PE report leaked an ELF-only hardening recommendation" || ok "no ELF-only hardening claimed on PE"
 $CARA recommend "$PE" > "$WORK/rec_pe.txt" 2>&1
 grep -q "\[PE\]" "$WORK/rec_pe.txt" && ok "recommend labels the PE format" || bad "recommend didn't mark PE"

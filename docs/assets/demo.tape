@@ -1,4 +1,4 @@
-# demo.tape: reproducible README demo GIF for blue-harness (Carapace)
+# demo.tape: reproducible README demo GIF for blue-harness
 #
 # Story (about 25s): audit a plain build (84/100, wide open), harden the
 # guarded build, re-audit (40/100, partially hardened), and show it still runs.
@@ -8,9 +8,9 @@
 #   2. Build the samples once:      make -C harness/sample sample_baseline sample_hardened
 #   3. From the repo root:          vhs docs/assets/demo.tape
 #
-# "app-guarded" is the same source as "app", built with Carapace's guards
-# (harness/harden/carapace_guards.c) linked in. The tape copies both samples
-# into /tmp/carapace-demo so the repo tree stays clean.
+# "app-guarded" is the same source as "app", built with blue-harness's guards
+# (harness/harden/bh_guards.c) linked in. The tape copies both samples
+# into /tmp/demo so the repo tree stays clean.
 
 Output docs/assets/demo.gif
 
@@ -27,7 +27,7 @@ Set BorderRadius 10
 Set Framerate 24
 
 Hide
-Type `export REPO="$PWD" PS1='\[\e[1;32m\]$\[\e[0m\] '; alias carapace="python3 $REPO/skill/carapace.py"; rm -rf /tmp/carapace-demo; mkdir -p /tmp/carapace-demo; cp harness/sample/sample_baseline /tmp/carapace-demo/app; cp harness/sample/sample_hardened /tmp/carapace-demo/app-guarded; cd /tmp/carapace-demo; clear`
+Type `export REPO="$PWD" PS1='\[\e[1;32m\]$\[\e[0m\] '; alias blue-harness="python3 $REPO/skill/blue_harness.py"; rm -rf /tmp/demo; mkdir -p /tmp/demo; cp harness/sample/sample_baseline /tmp/demo/app; cp harness/sample/sample_hardened /tmp/demo/app-guarded; cd /tmp/demo; clear`
 Enter
 Sleep 500ms
 Show
@@ -35,13 +35,13 @@ Show
 # Scene 1: measure, then harden
 Type "# 1. How exposed is my binary to an AI reverse-engineering agent?"
 Enter
-Type `carapace report app | grep -E 'SCORE|TIER'`
+Type `blue-harness report app | grep -E 'SCORE|TIER'`
 Enter
 Sleep 2500ms
 
-Type "# 2. Same app with Carapace guards linked in. Now harden the binary:"
+Type "# 2. Same app with blue-harness guards linked in. Now harden the binary:"
 Enter
-Type "carapace harden app-guarded | head -17"
+Type "blue-harness harden app-guarded | head -17"
 Enter
 Sleep 5500ms
 
@@ -53,7 +53,7 @@ Show
 # Scene 2: prove it
 Type "# 3. Re-audit the hardened build"
 Enter
-Type `carapace report app-guarded.hardened | grep -E 'SCORE|TIER'`
+Type `blue-harness report app-guarded.hardened | grep -E 'SCORE|TIER'`
 Enter
 Sleep 2500ms
 

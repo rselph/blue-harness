@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Implementation Slice C (the drive-the-harness
+# blue-harness — VERIFY harness for Implementation Slice C (the drive-the-harness
 # skill: audit -> recommend -> apply). A prose-only skill can't be verified, so
-# the skill's behavior lives in skill/carapace.py and is proven here.
+# the skill's behavior lives in skill/blue_harness.py and is proven here.
 #
 # Proves:
 #   (A) audit runs and reports an exposure posture;
@@ -17,7 +17,7 @@ set -u
 cd "$(dirname "$0")"
 REPO="$(cd ../.. && pwd)"
 SAMPLE_DIR="$(cd ../sample && pwd)"
-CARA="python3 $REPO/skill/carapace.py"
+CARA="python3 $REPO/skill/blue_harness.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -34,7 +34,7 @@ cp "$SAMPLE_DIR/sample_dev" "$WORK/target"
 DEV_OUT="$("$WORK/target" run)"
 
 # ----------------------------------------------------- (A) audit -----------
-hdr "(A) carapace audit"
+hdr "(A) blue-harness audit"
 if $CARA audit "$WORK/target" > "$WORK/audit.txt" 2>&1; then
     grep -q "EXPOSURE SCORE" "$WORK/audit.txt" && ok "audit prints an exposure posture" || bad "audit missing score"
 else
@@ -42,7 +42,7 @@ else
 fi
 
 # ------------------------------------------------ (B) recommend ------------
-hdr "(B) carapace recommend (honest tier + named bypass)"
+hdr "(B) blue-harness recommend (honest tier + named bypass)"
 $CARA recommend --json "$WORK/target" > "$WORK/rec.json" 2>&1
 $CARA recommend --all --json "$WORK/target" > "$WORK/recall.json" 2>&1
 
@@ -75,7 +75,7 @@ tier_top=$(python3 -c 'import json;print(json.load(open("'"$WORK"'/rec.json"))["
 echo "    top rec: identity-transform — tier: $tier_top"
 
 # ------------------------------------------------ (C) apply ---------------
-hdr "(C) carapace apply (post-build fires; build-time honestly refused)"
+hdr "(C) blue-harness apply (post-build fires; build-time honestly refused)"
 $CARA apply "$WORK/target" --mode S --out "$WORK/target.release" --map "$WORK/target.map.json" > "$WORK/apply.txt" 2>&1
 rc=$?
 [ $rc -eq 0 ] && [ -f "$WORK/target.release" ] && ok "apply produced the hardened artifact + private map" || { bad "apply failed (rc=$rc)"; cat "$WORK/apply.txt"; }

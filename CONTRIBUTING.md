@@ -1,6 +1,6 @@
-# Contributing to Carapace
+# Contributing to blue-harness
 
-Thanks for looking at Carapace. Contributions are welcome, and small focused changes are the easiest to review.
+Thanks for looking at blue-harness. Contributions are welcome, and small focused changes are the easiest to review.
 
 ## Running it locally
 
@@ -31,7 +31,7 @@ The verify slices live in `harness/verify/`. Each one checks the mechanism direc
 
 ## Licensing
 
-Carapace is AGPL-3.0 (open source), with a commercial dual-license option (see `COMMERCIAL-LICENSE.md`). By contributing, you agree that your contribution is licensed under AGPL-3.0. You also agree that the maintainer may also license your contribution commercially. This is what makes the dual-license model possible.
+blue-harness is AGPL-3.0 (open source), with a commercial dual-license option (see `COMMERCIAL-LICENSE.md`). By contributing, you agree that your contribution is licensed under AGPL-3.0. You also agree that the maintainer may also license your contribution commercially. This is what makes the dual-license model possible.
 
 ## Questions and security
 

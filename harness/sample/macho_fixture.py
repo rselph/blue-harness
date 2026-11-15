@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — minimal Mach-O fixture generator (Slice N verify helper).
+# blue-harness — minimal Mach-O fixture generator (Slice N verify helper).
 #
 # No Apple toolchain in the dev container, so the verify builds its own Mach-O
 # test inputs here: a structurally valid thin 64-bit (x86-64) Mach-O with a

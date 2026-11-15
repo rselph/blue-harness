@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — Slice K empirical SCORER (honest by construction).
+# blue-harness — Slice K empirical SCORER (honest by construction).
 #
 # WHAT THIS IS
 #   The operator runs an AI-RE agent (e.g. rea) against the CrackMe's baseline and
@@ -28,7 +28,7 @@ import argparse
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "harden"))
 try:
-    from carapace_honeytokens import check as honey_check  # noqa: E402
+    from bh_honeytokens import check as honey_check  # noqa: E402
 except Exception:   # pragma: no cover - honeytokens optional
     honey_check = None
 
@@ -105,7 +105,7 @@ def _fmt_num(x, unit=""):
 def render(report, seal):
     L = []
     L.append("=" * 66)
-    L.append("  Carapace — empirical RE-resistance measurement (Slice K)")
+    L.append("  blue-harness — empirical RE-resistance measurement (Slice K)")
     L.append(f"  flag SHA-256: {seal['sha256'][:16]}…  (len {seal.get('len','?')})")
     if report.get("measurement_grade") == "mock":
         L.append("  *** MOCK — scripted plumbing run, NOT A MEASUREMENT ***")
@@ -162,7 +162,7 @@ def render(report, seal):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Carapace Slice K scorer — honest before/after.")
+    ap = argparse.ArgumentParser(description="blue-harness Slice K scorer — honest before/after.")
     ap.add_argument("--seal", required=True, help="the CrackMe SEAL.json")
     ap.add_argument("--ledger", help="PRIVATE honeytoken ledger (for attribution scoring)")
     ap.add_argument("--baseline", help="baseline run artifact JSON")

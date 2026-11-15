@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice K (empirical measurement PLUMBING).
+# blue-harness — VERIFY harness for Slice K (empirical measurement PLUMBING).
 #
 # IMPORTANT: this proves the harness MECHANICS, NOT the AI-layer effectiveness
 # claim. No agent and no `rea` run here (that is operator-gated — a sandboxed,
@@ -33,7 +33,7 @@ BD="$CRACKME/build"
 
 hdr "(A) BUILD the matched pair + flag enforcement"
 rm -rf "$BD"
-CARAPACE_CRACKME_SECRET="$FLAG" bash "$CRACKME/build_crackme.sh" >/dev/null 2>&1 \
+BH_CRACKME_SECRET="$FLAG" bash "$CRACKME/build_crackme.sh" >/dev/null 2>&1 \
     && ok "build_crackme.sh produced the pair + seal" || { bad "crackme build failed"; exit 1; }
 BASE="$BD/crackme_baseline"; HARD="$BD/crackme_hardened"
 [ -x "$BASE" ] && [ -x "$HARD" ] && ok "baseline + hardened binaries present" || bad "a crackme binary is missing"

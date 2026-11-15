@@ -1,4 +1,4 @@
-/* Carapace Slice D sample — exercises the integrity/attestation + anti-Frida
+/* blue-harness Slice D sample — exercises the integrity/attestation + anti-Frida
  * guards so ../verify can prove they fire. Kept separate from the Slice A/B/C
  * sample so those stay untouched.
  *
@@ -24,25 +24,25 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "carapace_integrity.h"
-#include "carapace_antifrida.h"
+#include "bh_integrity.h"
+#include "bh_antifrida.h"
 
 /* ---- the protected "hot" function + end marker ------------------------ *
  * A license check an attacker would want to patch. The magic constant gives the
  * verify a stable byte pattern to flip on disk (simulating that patch) so we can
  * prove the checksum catches it. hotfn_end must sit immediately after hotfn so
  * the integrity guard can bound the exact bytes. */
-int carapace_hotfn(int x);
-void carapace_hotfn_end(void);
+int bh_hotfn(int x);
+void bh_hotfn_end(void);
 
-int carapace_hotfn(int x)
+int bh_hotfn(int x)
 {
     /* 0x5AFE6A11 ~ "SAFE-GALL"; the compare the cracker targets. */
     if ((unsigned)x == 0x5AFE6A11u)
         return 1;
     return 0;
 }
-void carapace_hotfn_end(void) { }
+void bh_hotfn_end(void) { }
 
 static void print_hex(const uint8_t *b, size_t n)
 {
@@ -89,7 +89,7 @@ static int plant_and_scan(const char *fake_so)
     }
 
     char detail[128];
-    int flags = carapace_antifrida_scan(detail, sizeof detail);
+    int flags = bh_antifrida_scan(detail, sizeof detail);
     printf("%s\n", detail);
     return flags;
 }
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 
     if (strcmp(mode, "checksum") == 0) {
         uint8_t cs[32];
-        carapace_hotfn_checksum(cs);
+        bh_hotfn_checksum(cs);
         print_hex(cs, 32);
         return 0;
     }
@@ -110,14 +110,14 @@ int main(int argc, char **argv)
         uint8_t nonce[128];
         size_t nlen = unhex(argv[2], nonce, sizeof nonce);
         uint8_t mac[32];
-        carapace_integrity_response(nonce, nlen, mac);
+        bh_integrity_response(nonce, nlen, mac);
         print_hex(mac, 32);
         return 0;
     }
 
     if (strcmp(mode, "antifrida") == 0) {
         char detail[128];
-        int flags = carapace_antifrida_scan(detail, sizeof detail);
+        int flags = bh_antifrida_scan(detail, sizeof detail);
         printf("%s\n", detail);
         return flags ? 1 : 0;
     }
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
     }
 
     /* default: a working app that uses the hot function */
-    int ok = carapace_hotfn(argc > 1 ? atoi(argv[1]) : 0);
+    int ok = bh_hotfn(argc > 1 ? atoi(argv[1]) : 0);
     printf("sample_attest: ran OK (license=%d)\n", ok);
     return 0;
 }

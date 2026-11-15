@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Carapace — MOBILE-CONTAINER harden (Slice R): reach into an APK/AAB/IPA and
+# blue-harness — MOBILE-CONTAINER harden (Slice R): reach into an APK/AAB/IPA and
 # apply the EXISTING per-format native hardeners to the payloads inside, then
 # repack.
 #
 # WHAT THIS IS
 #   Audit-first (CLAUDE.md §8): it uses the Slice-R mobile AUDIT to enumerate the
 #   native payloads, then DISPATCHES each one through the STABLE Slice-M format
-#   entry point — `skill/carapace.py harden`, falling back to `apply` for a format
+#   entry point — `skill/blue_harness.py harden`, falling back to `apply` for a format
 #   whose `harden` isn't wired on this base yet (e.g. Mach-O before Slice Q). It
 #   does NOT hard-code any specific lever, so it automatically picks up new
 #   per-format hardeners once they merge. Then it repacks the container with the
@@ -18,7 +18,7 @@
 #
 # HONESTY (CLAUDE.md §3) — THE SIGNING LIMITATION, STATED, NEVER FAKED
 #   Repacking changes bytes inside the container and INVALIDATES its code
-#   signature. Carapace repacks but DOES NOT sign. The operator must re-sign with
+#   signature. blue-harness repacks but DOES NOT sign. The operator must re-sign with
 #   their own keystore / signing identity (apksigner for APK/AAB; codesign + a
 #   provisioning profile for IPA). On-device integrity ultimately rests on the
 #   PLATFORM verifying that signature — which a client-side harness neither
@@ -44,7 +44,7 @@ import subprocess
 _HARDEN_DIR = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(os.path.dirname(_HARDEN_DIR))
 _AUDIT_DIR = os.path.join(_REPO, "harness", "audit")
-_CARA = os.path.join(_REPO, "skill", "carapace.py")
+_CARA = os.path.join(_REPO, "skill", "blue_harness.py")
 if _AUDIT_DIR not in sys.path:
     sys.path.insert(0, _AUDIT_DIR)
 
@@ -69,9 +69,9 @@ def _safe_name(arcname):
 def _dispatch(payload_in, payload_out, build_tag):
     """Harden ONE native payload through the stable Slice-M entry point.
 
-    Prefer the full post-build chain (`carapace harden`); if that command does
+    Prefer the full post-build chain (`blue-harness harden`); if that command does
     not handle this format on this base (rc 3 — e.g. Mach-O before Slice Q), fall
-    back to the single safe pass (`carapace apply`). Returns (rc, used, stdout,
+    back to the single safe pass (`blue-harness apply`). Returns (rc, used, stdout,
     stderr)."""
     py = sys.executable or "python3"
     r = subprocess.run([py, _CARA, "harden", payload_in, "--out", payload_out,
@@ -89,13 +89,13 @@ def harden(path, out=None, build_tag="dev-build", private_dir=None):
     Raises MobileHardenError on an unrecoverable per-payload failure."""
     s = mca.analyze(path)                        # audit-first: classify + enumerate
     out = out or (path + ".hardened")
-    private_dir = private_dir or (out + ".carapace-private")
+    private_dir = private_dir or (out + ".blue-harness-private")
 
     if not s["payloads"]:
         raise MobileHardenError(
             "no native payloads to harden (DEX/managed code is out of scope)")
 
-    tmproot = tempfile.mkdtemp(prefix="carapace_mobile_harden_")
+    tmproot = tempfile.mkdtemp(prefix="bh_mobile_harden_")
     substitutions = {}      # arcname -> hardened bytes
     report = []             # per-payload result rows
     os.makedirs(private_dir, exist_ok=True)
@@ -173,7 +173,7 @@ def _resign_line(osk):
 def render(res):
     osk = res["os"]
     L = []
-    L.append(f"Carapace harden (mobile / {res['container'].upper()}) — "
+    L.append(f"blue-harness harden (mobile / {res['container'].upper()}) — "
              f"{_rel(res['in'])} → {_rel(res['out'])}")
     L.append(f"  native payloads processed: {len(res['payloads'])}  "
              f"(hardened: {res['hardened_count']})")
@@ -182,7 +182,7 @@ def render(res):
     for r in res["payloads"]:
         abi = f" [{r['abi']}]" if r.get("abi") else ""
         L.append(f"    • {r['arcname']}{abi}  — {r['format'].upper()}  "
-                 f"→ {r['status']} (via carapace {r['via']})")
+                 f"→ {r['status']} (via blue-harness {r['via']})")
         if r["sidecars"]:
             L.append(f"        PRIVATE sidecar(s): {', '.join(r['sidecars'])}")
     L.append("")
@@ -201,7 +201,7 @@ def render(res):
     L.append("  ⚠ SIGNING — NOT DONE, BY DESIGN (honest limitation, CLAUDE.md §3):")
     L.append("        Repacking INVALIDATED the container's code signature.")
     L.append(f"        YOU must re-sign: {_resign_line(osk)}.")
-    L.append("        Carapace does NOT sign and does NOT fake signing. On-device")
+    L.append("        blue-harness does NOT sign and does NOT fake signing. On-device")
     L.append("        integrity ultimately depends on the PLATFORM verifying that")
     L.append("        signature — a client harness cannot provide or fake that.")
     L.append("")
@@ -213,7 +213,7 @@ def render(res):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Carapace mobile-container harden (APK/AAB/IPA): dispatch the "
+        description="blue-harness mobile-container harden (APK/AAB/IPA): dispatch the "
                     "existing native hardeners to the payloads inside + repack. "
                     "Does NOT sign — the operator re-signs (apksigner/codesign).")
     ap.add_argument("container", help="path to the .apk / .aab / .ipa (any ZIP)")
@@ -221,7 +221,7 @@ def main(argv=None):
     ap.add_argument("--build-tag", default="dev-build",
                     help="build id recorded in the honeytoken ledger(s)")
     ap.add_argument("--private-dir", help="where to collect the PRIVATE map/ledger "
-                    "sidecars (default <out>.carapace-private)")
+                    "sidecars (default <out>.blue-harness-private)")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
     try:
@@ -229,7 +229,7 @@ def main(argv=None):
                      private_dir=args.private_dir)
     except (mca.ContainerError, MobileHardenError, FileNotFoundError,
             zipfile.BadZipFile) as e:
-        print(f"carapace-mobile-harden error: {e}", file=sys.stderr)
+        print(f"blue-harness-mobile-harden error: {e}", file=sys.stderr)
         return 2
     if args.json:
         print(json.dumps(res, indent=2))

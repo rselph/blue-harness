@@ -1,8 +1,11 @@
 # Changelog
 
-All notable changes to Carapace are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+All notable changes to blue-harness are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+
+### Changed
+- Renamed the project from its working name "Carapace" to **blue-harness**. The CLI is now `skill/blue_harness.py`, hardening modules are `harness/harden/bh_*`, C symbols and macros use the `bh_` / `BH_` prefix, and decoy/honeytoken section names changed to match (for example `.bh_honey`). Rebuild anything linked against the old `carapace_*` guards.
 
 ## [0.1.0] - 2026-11-15
 

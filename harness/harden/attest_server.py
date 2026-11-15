@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Carapace — reference server-side attestation verifier (Slice D).
+# blue-harness — reference server-side attestation verifier (Slice D).
 #
 # Models the OPERATOR'S SERVER, which is where the trust decision actually lives.
-# The client (carapace_integrity.c) returns HMAC(key, nonce || live_checksum).
+# The client (bh_integrity.c) returns HMAC(key, nonce || live_checksum).
 # The server holds the shared key AND the known-good checksum, issues a fresh
 # random nonce per challenge, recomputes the expected MAC, and compares in
 # constant time. This defeats:
@@ -41,7 +41,7 @@ def verify(key_hex, good_checksum_hex, nonce_hex, client_mac_hex):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Carapace reference attestation verifier.")
+    ap = argparse.ArgumentParser(description="blue-harness reference attestation verifier.")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     n = sub.add_parser("nonce", help="issue a fresh random nonce (hex)")

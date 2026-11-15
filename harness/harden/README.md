@@ -4,12 +4,12 @@ Build-time guards for a Linux ELF the operator owns. Each denies a **named `rea`
 weapon** and ships with an honest strength tier + a named bypass (CLAUDE.md §3).
 These are **cost, not prevention.**
 
-`carapace_guards.c` / `carapace_guards.h`:
+`bh_guards.c` / `bh_guards.h`:
 
 | Guard | Call | Denies (rea) | Tier | Named bypass |
 |---|---|---|---|---|
-| Core-dump suppression | `carapace_guard_coredump()` | Cluster E — `inspect_recorded_crash` (no core ⇒ nothing to read) | **Speed-bump** | Attacker re-enables cores on their own host; or reads live memory via Frida/GDB |
-| Anti-ptrace | `carapace_guard_antiptrace()` | Cluster G — Frida attach (ptrace-based) + Cluster H — `debug-with-gdb` | **Meaningful** | Frida can hook the check; spawn-paused loads a bypass before our code runs; stealth/kernel debugger evades the `TracerPid` read |
+| Core-dump suppression | `bh_guard_coredump()` | Cluster E — `inspect_recorded_crash` (no core ⇒ nothing to read) | **Speed-bump** | Attacker re-enables cores on their own host; or reads live memory via Frida/GDB |
+| Anti-ptrace | `bh_guard_antiptrace()` | Cluster G — Frida attach (ptrace-based) + Cluster H — `debug-with-gdb` | **Meaningful** | Frida can hook the check; spawn-paused loads a bypass before our code runs; stealth/kernel debugger evades the `TracerPid` read |
 
 - **Core-dump:** `setrlimit(RLIMIT_CORE,0)` **and** `prctl(PR_SET_DUMPABLE,0)` —
   either alone prevents a core; `DUMPABLE=0` also stops a pipe `core_pattern`
@@ -19,14 +19,14 @@ These are **cost, not prevention.**
   slot so a later `PTRACE_ATTACH` returns `EPERM`. Order matters — TRACEME makes
   our own parent the tracer, so the TracerPid read must precede it.
 
-The guards **report**; they don't exit for you (`carapace_guards_init()` returns
-`CARAPACE_TRACER_DETECTED` when a tracer is seen). Policy stays with the operator
+The guards **report**; they don't exit for you (`bh_guards_init()` returns
+`BH_TRACER_DETECTED` when a tracer is seen). Policy stays with the operator
 and the behavior stays testable. Integration example: `../sample`. Proof they
 fire: `../verify`.
 
 ---
 
-## Identity transform — `carapace_identity_transform.py` (Slice B)
+## Identity transform — `bh_identity_transform.py` (Slice B)
 
 The dev↔release **identity transform**: keep one clean dev binary, emit a shipped
 binary whose human-readable identity is degraded, plus a **private mapping file**
@@ -37,10 +37,10 @@ compiled ELF via `objcopy`/`strip` (symbols) + a same-length `.rodata` patch
 (opt-in internal strings).
 
 ```
-python3 carapace_identity_transform.py transform --mode {S|M|D} \
+python3 bh_identity_transform.py transform --mode {S|M|D} \
         --in sample_dev --out sample_release --map private_map.json \
         [--string-decoys pairs.json]
-python3 carapace_identity_transform.py resolve --map private_map.json <release_name>
+python3 bh_identity_transform.py resolve --map private_map.json <release_name>
 ```
 
 | Mode | Symbols become | Recoverable? | Use for |
@@ -76,7 +76,7 @@ natural-looking, so they don't trip "this is obfuscated" heuristics).
 Frida is rea's **only in-process modification path**. Two guards raise its cost;
 both are libc-only (self-contained SHA-256/HMAC, no OpenSSL).
 
-### Code-integrity + server-nonce attestation — `carapace_integrity.{c,h}`
+### Code-integrity + server-nonce attestation — `bh_integrity.{c,h}`
 
 Defeats the *value* of a patch (e.g. a NOP'd license check). The client returns
 `HMAC(key, nonce || SHA-256(hot-function bytes))`; the **server** issues a fresh
@@ -84,8 +84,8 @@ nonce per challenge and holds the known-good checksum (`attest_server.py` is the
 reference verifier).
 
 ```
-carapace_hotfn_checksum(out32);                         // SHA-256 of the hot fn
-carapace_integrity_response(nonce, nonce_len, mac32);   // HMAC(key, nonce||checksum)
+bh_hotfn_checksum(out32);                         // SHA-256 of the hot fn
+bh_integrity_response(nonce, nonce_len, mac32);   // HMAC(key, nonce||checksum)
 ```
 
 | Property | Result |
@@ -101,10 +101,10 @@ checksum each challenge; the client key can be extracted, so trust rests on the
 server nonce + the server holding the good checksum, **not** on client secrecy.
 Not a substitute for keeping the secret server-side (the only truly Strong tier).
 
-### Anti-Frida detector — `carapace_antifrida.{c,h}`
+### Anti-Frida detector — `bh_antifrida.{c,h}`
 
 ```
-int flags = carapace_antifrida_scan(detail, sizeof detail);  // 0 = clean
+int flags = bh_antifrida_scan(detail, sizeof detail);  // 0 = clean
 ```
 
 Three cheap, independent signals (any one trips): a `frida-agent`/`gum` **mapping**
@@ -127,16 +127,16 @@ Removes **live, used** strings from a static `strings` / `list_strings` view by
 storing them encrypted and decoding on demand — complementing the identity
 transform's decoy pass (which only covers *internal* strings).
 
-- `carapace_string_encrypt.py gen --manifest M.json --mode {enc|plain} --out gen.h`
+- `bh_string_encrypt.py gen --manifest M.json --mode {enc|plain} --out gen.h`
   — build-time codegen. Reads `{ID: "plaintext"}`, emits C byte tables. The dev
   tree keeps the manifest (clear); the shipped binary carries only ciphertext.
-- `carapace_strings.{c,h}` — the runtime loader: `carapace_cstr(id)` /
-  `carapace_cstr_into(id, out, cap)` decode on demand.
+- `bh_strings.{c,h}` — the runtime loader: `bh_cstr(id)` /
+  `bh_cstr_into(id, out, cap)` decode on demand.
 
 ```
-python3 carapace_string_encrypt.py gen --manifest secrets.json --mode enc --out carapace_strings_gen.h
-cc -DCARAPACE_GEN_HEADER='"carapace_strings_gen.h"' app.c carapace_strings.c
-# then in code:  printf("%s", carapace_cstr(CSTR_API_URL));
+python3 bh_string_encrypt.py gen --manifest secrets.json --mode enc --out bh_strings_gen.h
+cc -DBH_GEN_HEADER='"bh_strings_gen.h"' app.c bh_strings.c
+# then in code:  printf("%s", bh_cstr(CSTR_API_URL));
 ```
 
 **Cipher:** a position-dependent **xorshift32 keystream** XOR (seeded per string
@@ -159,14 +159,14 @@ surface, not on the program. Operates on the compiled ELF via `objcopy` (two
 non-breaking levers), post-build.
 
 ```
-python3 carapace_exhaust.py sample_dev sample_dev.exh \
+python3 bh_exhaust.py sample_dev sample_dev.exh \
         --sections 4 --section-size 131072 --symbols 300
 ```
 
 | Lever | What it adds | Why it's non-breaking |
 |---|---|---|
-| Decoy **non-alloc** sections (`.carapace_exh_*`) | N×`SHT_PROGBITS` with **SHF_ALLOC clear** | the loader never maps a non-alloc section → zero runtime cost, zero behaviour change |
-| Synthetic **LOCAL FUNC** symbols (`carapace_exh_fn_*`) | M entries in `.symtab` only | LOCAL + symtab-only → `.dynsym`/exports and dynamic linking untouched |
+| Decoy **non-alloc** sections (`.bh_exh_*`) | N×`SHT_PROGBITS` with **SHF_ALLOC clear** | the loader never maps a non-alloc section → zero runtime cost, zero behaviour change |
+| Synthetic **LOCAL FUNC** symbols (`bh_exh_fn_*`) | M entries in `.symtab` only | LOCAL + symtab-only → `.dynsym`/exports and dynamic linking untouched |
 
 A naive agent that inventories and dumps every section / enumerates every symbol
 pays the full token/context cost of the inflated surface; its inventory can
@@ -197,12 +197,12 @@ agents confidently report plausible-but-wrong results, amplifying a
 back to the exact build.
 
 ```
-python3 carapace_honeytokens.py plant sample_dev sample_dev.honey \
+python3 bh_honeytokens.py plant sample_dev sample_dev.honey \
         --ledger private_ledger.json --count 10 --build-tag 2026-11-05-rc1
-python3 carapace_honeytokens.py check --ledger private_ledger.json --input leak.txt
+python3 bh_honeytokens.py check --ledger private_ledger.json --input leak.txt
 ```
 
-Placement: a **non-allocated** section (default `.carapace_honey`) — never mapped
+Placement: a **non-allocated** section (default `.bh_honey`) — never mapped
 at runtime, so the program is byte-identical and the tokens are provably
 unreferenced decoys, yet still visible to a whole-file `strings` / `list_strings`
 scan (the naive agent's mining path). Deterministic (seeded) for reproducible
@@ -225,14 +225,14 @@ makes attribution work. Proof it fires + is non-breaking + attribution/uniquenes
 
 ## Mach-O local-symbol strip (Slice O) — the first Mach-O harden
 
-`carapace_macho_strip.py` removes the **LOCAL** (static / internal) symbols from a
+`bh_macho_strip.py` removes the **LOCAL** (static / internal) symbols from a
 Mach-O's symbol table — exactly what `strip -x` does — so an AI-RE agent loses the
 internal names it mines, while the **external / undefined** symbols the dynamic
 linker needs are preserved. Byte-level, **no Apple/LLVM toolchain**, via
 `LC_SYMTAB` + `LC_DYSYMTAB`.
 
 ```
-python3 carapace_macho_strip.py --in app --out app.stripped      # or: carapace apply app
+python3 bh_macho_strip.py --in app --out app.stripped      # or: blue-harness apply app
 ```
 
 | Property | Result |
@@ -261,19 +261,19 @@ PE was audit-only (Slice G, `audit/pe_exposure_audit.py`). Slice P gives it a
 post-build **harden** path with three provable, non-breaking levers — all
 byte-level, **no Windows toolchain**, proven **structurally** on Linux with no
 Windows host (exactly how the Slice O Mach-O strip is proven). Drive the whole set
-with `carapace harden <exe>`, or run a lever directly.
+with `blue-harness harden <exe>`, or run a lever directly.
 
-| Lever (`carapace_pe_*.py`) | What it does | Why it's non-breaking | Tier · named bypass |
+| Lever (`bh_pe_*.py`) | What it does | Why it's non-breaking | Tier · named bypass |
 |---|---|---|---|
-| `carapace_pe_strip.py` | clears the **COFF symbol table** + **debug directory / CodeView PDB-path** | COFF symbols + debug data are never read by the running program (a debugger reads them); **in-place, size stable**; imports/exports/entry/sections/`SizeOfImage` byte-identical | **Speed-bump→Meaningful** · imports + exported names remain; behaviour recoverable |
-| `carapace_pe_exhaust.py` | appends decoy **NON-MAPPED overlay** regions (surface exhaustion) | the loader builds the image from the section table up to `SizeOfImage`; **overlay bytes are never mapped**. Append-only → the original file is a byte-identical prefix | **Trivial→Speed-bump** · map only section-covered bytes (the overlay is ignored) |
-| `carapace_pe_honeytokens.py` | plants unique plausible fake secrets into the overlay + a **private ledger** | overlay = non-mapped; append-only; tokens are whole-file-`strings` visible but provably unreferenced. `check` attributes a leaked token to its build | **Speed-bump** (poison) / **Meaningful FOR DETECTION** (attribution) · xref-validate + rename the footer marker |
+| `bh_pe_strip.py` | clears the **COFF symbol table** + **debug directory / CodeView PDB-path** | COFF symbols + debug data are never read by the running program (a debugger reads them); **in-place, size stable**; imports/exports/entry/sections/`SizeOfImage` byte-identical | **Speed-bump→Meaningful** · imports + exported names remain; behaviour recoverable |
+| `bh_pe_exhaust.py` | appends decoy **NON-MAPPED overlay** regions (surface exhaustion) | the loader builds the image from the section table up to `SizeOfImage`; **overlay bytes are never mapped**. Append-only → the original file is a byte-identical prefix | **Trivial→Speed-bump** · map only section-covered bytes (the overlay is ignored) |
+| `bh_pe_honeytokens.py` | plants unique plausible fake secrets into the overlay + a **private ledger** | overlay = non-mapped; append-only; tokens are whole-file-`strings` visible but provably unreferenced. `check` attributes a leaked token to its build | **Speed-bump** (poison) / **Meaningful FOR DETECTION** (attribution) · xref-validate + rename the footer marker |
 
 ```
-python3 carapace_pe_strip.py --in app.exe --out app.stripped.exe
-python3 carapace_pe_exhaust.py app.exe app.exh.exe --sections 4 --section-size 131072
-python3 carapace_pe_honeytokens.py plant app.exe app.honey.exe --ledger private_ledger.json --build-tag rc1
-python3 carapace_pe_honeytokens.py check --ledger private_ledger.json --input leak.txt
+python3 bh_pe_strip.py --in app.exe --out app.stripped.exe
+python3 bh_pe_exhaust.py app.exe app.exh.exe --sections 4 --section-size 131072
+python3 bh_pe_honeytokens.py plant app.exe app.honey.exe --ledger private_ledger.json --build-tag rc1
+python3 bh_pe_honeytokens.py check --ledger private_ledger.json --input leak.txt
 ```
 
 **Why the overlay (and not new section-table entries):** a provably non-mapped PE
@@ -289,5 +289,5 @@ the overlay** (past every section's raw data); **runtime-identical is platform-
 gated to a Windows host**. Appending overlay data or stripping metadata invalidates
 an Authenticode signature, so sign **after** hardening (each tool warns if signed).
 The honeytoken token generators are **shared** with the ELF pass
-(`carapace_honeytokens.generate/check`). Keep every ledger **PRIVATE**. These are
+(`bh_honeytokens.generate/check`). Keep every ledger **PRIVATE**. These are
 **cost / detection, not prevention.** Proof: `../verify/test_slice_p.sh`.

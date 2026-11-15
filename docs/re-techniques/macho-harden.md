@@ -16,13 +16,13 @@ clean inventory it can fit in a context window.
 
 ## Steps and countermeasures
 
-| Attacker step | Carapace countermeasure | Slice | Tier | Named bypass |
+| Attacker step | blue-harness countermeasure | Slice | Tier | Named bypass |
 |---|---|---|---|---|
 | Read the posture for free (symtab size, string density, entropy, PIE/`__RESTRICT`/signature/`__TEXT` encryption) | **Audit** `macho_exposure_audit.py` (read-only, scored, tiered) — *measure first* | N | n/a (read-only) | — |
 | Mine internal (LOCAL/static) symbol names | **Local-symbol strip** (`strip -x` equivalent, byte-level; externals dyld needs preserved) | O | Speed-bump→Meaningful | exported names remain; logic recoverable from behaviour/xrefs |
-| Ingest the whole file / enumerate every segment to build a map | **Decoy non-mapped segment + trailer** (`carapace_macho_exhaust.py`): bulk decoy bytes in the non-mapped trailer **and** a real `LC_SEGMENT_64 __CARAPACE_EXH` with `vmsize=0` (dyld ignores it → maps nothing), spliced into header pad in place | Q | Trivial→Speed-bump | a loader-faithful tool reads only mapped segments and drops `vmsize==0` LCs + the trailer (a one-line filter) — this is **cost**, not prevention |
-| Trust mined "secrets" as real findings; (later) attribute a leaked crack | **Honeytokens / canaries** (`carapace_macho_honeytokens.py`): plausible fake secrets in the non-mapped trailer + a **private** per-build ledger (`check` attributes a leak) | Q | Speed-bump (poison) / Meaningful FOR DETECTION (attribution) | xref-validate drops unreferenced tokens; the default marker is a tell — rename for production |
-| Read `__cstring` plaintext live strings | Encrypt + decode-on-demand (ELF `carapace_string_encrypt.py` today; Mach-O codegen is future work) | — | Speed-bump→Meaningful | embedded key → recover at rest / lift from memory |
+| Ingest the whole file / enumerate every segment to build a map | **Decoy non-mapped segment + trailer** (`bh_macho_exhaust.py`): bulk decoy bytes in the non-mapped trailer **and** a real `LC_SEGMENT_64 __BH_EXH` with `vmsize=0` (dyld ignores it → maps nothing), spliced into header pad in place | Q | Trivial→Speed-bump | a loader-faithful tool reads only mapped segments and drops `vmsize==0` LCs + the trailer (a one-line filter) — this is **cost**, not prevention |
+| Trust mined "secrets" as real findings; (later) attribute a leaked crack | **Honeytokens / canaries** (`bh_macho_honeytokens.py`): plausible fake secrets in the non-mapped trailer + a **private** per-build ledger (`check` attributes a leak) | Q | Speed-bump (poison) / Meaningful FOR DETECTION (attribution) | xref-validate drops unreferenced tokens; the default marker is a tell — rename for production |
+| Read `__cstring` plaintext live strings | Encrypt + decode-on-demand (ELF `bh_string_encrypt.py` today; Mach-O codegen is future work) | — | Speed-bump→Meaningful | embedded key → recover at rest / lift from memory |
 | Keep any client-side secret at all | **Relocate secrets & trust server-side** (the only Strong tier) | — | Strong | none for the relocated secret; client still needs anti-tamper on the request path |
 
 ## Why the decoy is a real *segment* (and why it needs header pad)
@@ -40,7 +40,7 @@ See `research/findings/2026-11-13-macho-harden-levers.md` for the cited format f
 1. **Surgical splice** — every changed in-file byte lies in the header pad we consumed
    or the two mach-header count fields (`ncmds`, `sizeofcmds`); the consumed pad bytes
    were zero in the input (we overwrote padding, nothing else moved).
-2. **Maps nothing** — the added `__CARAPACE_EXH` segment has `vmsize == 0`
+2. **Maps nothing** — the added `__BH_EXH` segment has `vmsize == 0`
    (`initprot == maxprot == 0`).
 3. **Non-mapped trailer** — decoy/honey bytes sit at the original EOF, past `mapped_end`
    (the end of every segment/section/table), so no segment maps them; append-only prefix.

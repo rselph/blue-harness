@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — shared Mach-O harden mechanism (Slice Q).
+# blue-harness — shared Mach-O harden mechanism (Slice Q).
 #
 # Two primitives the Mach-O harden levers (exhaust / honeytokens) are built on, both
 # proven byte-level with NO macOS host (CLAUDE.md §3 — runtime acceptance is

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Implementation Slice B (dev<->release identity
+# blue-harness — VERIFY harness for Implementation Slice B (dev<->release identity
 # transform: the AI-layer decoy play).
 #
 # Proves, on a real sample ELF, the three claims from docs/STATE.md step 3:
@@ -16,7 +16,7 @@ set -u
 cd "$(dirname "$0")"
 SAMPLE_DIR="$(cd ../sample && pwd)"
 AUDIT="$(cd ../audit && pwd)/elf_exposure_audit.py"
-TX="$(cd ../harden && pwd)/carapace_identity_transform.py"
+TX="$(cd ../harden && pwd)/bh_identity_transform.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -32,10 +32,10 @@ inf() { python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["informat
 # ---------------------------------------------------------------- build ----
 hdr "BUILD dev artifact"
 make -C "$SAMPLE_DIR" clean >/dev/null 2>&1
-if make -C "$SAMPLE_DIR" sample_dev >/tmp/carapace_b_build.log 2>&1; then
+if make -C "$SAMPLE_DIR" sample_dev >/tmp/bh_b_build.log 2>&1; then
     ok "sample_dev built (clean, unstripped, with symbols)"
 else
-    bad "build failed"; cat /tmp/carapace_b_build.log; exit 1
+    bad "build failed"; cat /tmp/bh_b_build.log; exit 1
 fi
 DEV="$SAMPLE_DIR/sample_dev"
 DEV_OUT="$("$DEV" run)"

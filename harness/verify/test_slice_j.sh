@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice J (honeytokens / canaries: Poison + attribution).
+# blue-harness — VERIFY harness for Slice J (honeytokens / canaries: Poison + attribution).
 #
 # Proves, on a real sample ELF, that honeytoken planting:
 #   (A) the AUDIT flips absent<->present and counts the planted tokens;
@@ -18,7 +18,7 @@ set -u
 cd "$(dirname "$0")"
 SAMPLE_DIR="$(cd ../sample && pwd)"
 AUDIT="$(cd ../audit && pwd)/elf_exposure_audit.py"
-HONEY="$(cd ../harden && pwd)/carapace_honeytokens.py"
+HONEY="$(cd ../harden && pwd)/bh_honeytokens.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -70,7 +70,7 @@ import sys,os
 sys.path.insert(0, os.path.dirname(sys.argv[2]))
 from elf_exposure_audit import ELF
 elf=ELF(sys.argv[1]); SHF_ALLOC=0x2
-sh=elf.sections.get(".carapace_honey")
+sh=elf.sections.get(".bh_honey")
 sys.exit(0 if sh and not (sh["flags"] & SHF_ALLOC) else 1)
 PY
 

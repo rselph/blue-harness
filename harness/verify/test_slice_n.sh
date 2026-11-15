@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice N (Mach-O exposure audit — the third format).
+# blue-harness — VERIFY harness for Slice N (Mach-O exposure audit — the third format).
 #
 # No Apple toolchain in the container, so we drive a toolchain-free Mach-O fixture
 # generator (soft/hard/encrypted/fat) and prove the self-contained parser reads
@@ -24,7 +24,7 @@ REPO="$(cd ../.. && pwd)"
 SAMPLE_DIR="$(cd ../sample && pwd)"
 AUDIT="$REPO/harness/audit/macho_exposure_audit.py"
 FIX="$SAMPLE_DIR/macho_fixture.py"
-CARA="python3 $REPO/skill/carapace.py"
+CARA="python3 $REPO/skill/blue_harness.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -78,7 +78,7 @@ hdr "(E) code signature READ-ONLY + honest note"
 python3 "$AUDIT" "$WORK/mo_hard" | grep -q "READ-ONLY, not verified" && ok "render marks the signature READ-ONLY (not verified)" || bad "read-only note missing"
 
 hdr "(F) skill dispatch + honest refusal"
-$CARA audit "$WORK/mo_soft" 2>&1 | grep -q "Mach-O Exposure Audit" && ok "carapace audit routes Mach-O to this scanner" || bad "skill did not route Mach-O"
+$CARA audit "$WORK/mo_soft" 2>&1 | grep -q "Mach-O Exposure Audit" && ok "blue-harness audit routes Mach-O to this scanner" || bad "skill did not route Mach-O"
 $CARA harden "$WORK/mo_soft" --out "$WORK/mo_soft.hard" >/dev/null 2>&1; [ "$?" -eq 0 ] && ok "harden now dispatches the Mach-O harden chain (Slice Q)" || bad "harden did not run on Mach-O"
 
 hdr "(G) non-Mach-O rejected gracefully"

@@ -1,7 +1,7 @@
 # harness/sample — the sample ELF (one source, two builds)
 
 `sample_app.c` + `Makefile`. The **only** difference between the two builds is
-`-DCARAPACE_HARDENED` plus the guard object, so the audit's absent→present flip
+`-DBH_HARDENED` plus the guard object, so the audit's absent→present flip
 is attributable to the guards alone (nothing else changes).
 
 ```
@@ -10,7 +10,7 @@ make clean
 ```
 
 - `sample_baseline` — audit reports both guards **ABSENT**.
-- `sample_hardened` — calls `carapace_guards_init()` at startup → audit reports
+- `sample_hardened` — calls `bh_guards_init()` at startup → audit reports
   both guards **PRESENT**.
 
 Run modes (so the guards are observable without a debugger in the loop):

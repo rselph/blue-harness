@@ -8,7 +8,7 @@
   for bare binaries (Ghidra/radare2/Frida, now LLM-driven).
 - What it needs from the target: an unpackable container (always — it is a ZIP)
   and native payloads that still carry symbols / plaintext strings / an un-stripped
-  structure. Carapace's job: reach **inside** the container and raise the cost of
+  structure. blue-harness's job: reach **inside** the container and raise the cost of
   the native payloads using the existing per-format hardeners.
 - Scope (CLAUDE.md §2): **native payloads only.** Dalvik/DEX (Java/Kotlin) is a
   separate track and **out of scope** — `classes*.dex` is enumerated-and-skipped,
@@ -48,27 +48,27 @@ every bypass) is inherited from the delegated ELF/Mach-O slice.
 Repacking changes bytes inside the container and therefore **invalidates its code
 signature**:
 - **APK/AAB** — the v2/v3 scheme is whole-file; any change outside the signing
-  block invalidates it. The operator **must re-sign** (`apksigner`), which Carapace
+  block invalidates it. The operator **must re-sign** (`apksigner`), which blue-harness
   does **not** do and does **not** fake.
 - **iOS** — the signature covers the Mach-O *and* the resource hashes; iOS refuses
   an app whose signature does not verify. The operator **must re-sign** (`codesign`
   + a valid provisioning profile). App Store binaries are also FairPlay-encrypted —
   harden the **pre-signing build**, not a store download.
 
-Carapace repacks but never signs, and says so in every tool path and in the verify.
+blue-harness repacks but never signs, and says so in every tool path and in the verify.
 
 ## Harness hooks
 - Audit check(s): `harness/audit/mobile_container_audit.py` — unzip, enumerate
   native payloads by path + magic byte, delegate each to the ELF
   (`elf_exposure_audit`) or Mach-O (`macho_exposure_audit`) auditor, report a
   per-payload scored posture. Read-only.
-- Hardening(s): `harness/harden/carapace_mobile.py` — for each enumerated payload,
-  dispatch through the **stable Slice-M format entry point** (`skill/carapace.py
+- Hardening(s): `harness/harden/bh_mobile.py` — for each enumerated payload,
+  dispatch through the **stable Slice-M format entry point** (`skill/blue_harness.py
   harden`, falling back to `apply`) so it uses whatever the per-format hardener
   offers today and automatically picks up new levers (e.g. Slice Q Mach-O) once
   merged; collect the PRIVATE map/ledger sidecars **outside** the container; repack;
   print the signing limitation. Wired into the skill's magic-byte dispatch
-  (`carapace audit|report|harden <app.apk|app.aab|app.ipa>`) and
+  (`blue-harness audit|report|harden <app.apk|app.aab|app.ipa>`) and
   `make harden-apk|harden-ipa|harden-mobile`.
 - Verify: `harness/verify/test_slice_r.sh` — synthetic ZIP fixtures (a tiny ELF
   `.so` + a tiny Mach-O) prove enumeration delegates correctly and that harden

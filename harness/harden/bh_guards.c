@@ -1,4 +1,4 @@
-/* Carapace self-defense guards — Linux implementation.
+/* blue-harness self-defense guards — Linux implementation.
  *
  * Audit-first project: the audit scanner (../audit/elf_exposure_audit.py) infers
  * the presence of these guards from the symbols they reference (setrlimit+prctl,
@@ -7,10 +7,10 @@
  * in ../verify prove the guards also *fire*.
  *
  * Honesty (CLAUDE.md §3): these raise an attacker's cost. They are not
- * unbreakable. Every guard's tier + named bypass is in carapace_guards.h.
+ * unbreakable. Every guard's tier + named bypass is in bh_guards.h.
  */
 #define _GNU_SOURCE
-#include "carapace_guards.h"
+#include "bh_guards.h"
 
 #include <sys/resource.h>   /* setrlimit, RLIMIT_CORE            */
 #include <sys/prctl.h>      /* prctl, PR_SET_DUMPABLE            */
@@ -26,7 +26,7 @@
  * core past the limit) and PR_SET_DUMPABLE=0 (the process is marked
  * non-dumpable, so the kernel invokes no core handler at all, regardless of
  * core_pattern — a pipe handler is never even reached). We set both. */
-int carapace_guard_coredump(void)
+int bh_guard_coredump(void)
 {
     int ok = 0;
 
@@ -41,14 +41,14 @@ int carapace_guard_coredump(void)
     if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) == 0)
         ok = 1;
 
-    return ok ? CARAPACE_OK : CARAPACE_GUARD_ERROR;
+    return ok ? BH_OK : BH_GUARD_ERROR;
 }
 
 /* ---- TracerPid reader ------------------------------------------------- *
  * Parse /proc/self/status for "TracerPid:\t<n>". Returns n, or -1 if the file
  * can't be read. A nonzero value means a debugger/instrumentation (Frida on
  * Linux attaches via ptrace) is attached right now. */
-int carapace_tracerpid(void)
+int bh_tracerpid(void)
 {
     int fd = open("/proc/self/status", O_RDONLY | O_CLOEXEC);
     if (fd < 0)
@@ -84,21 +84,21 @@ int carapace_tracerpid(void)
  *      (e.g. spawned under a debugger) -> detected.
  * We report; the caller sets policy. Bypass: Frida can hook ptrace/open/read;
  * a spawn-paused session can neutralize this before it runs. */
-int carapace_guard_antiptrace(void)
+int bh_guard_antiptrace(void)
 {
-    int tracer = carapace_tracerpid();
+    int tracer = bh_tracerpid();
     if (tracer > 0)
-        return CARAPACE_TRACER_DETECTED;   /* someone attached before us */
+        return BH_TRACER_DETECTED;   /* someone attached before us */
 
     long r = ptrace(PTRACE_TRACEME, 0, 0, 0);
     if (r == -1)
-        return CARAPACE_TRACER_DETECTED;   /* slot already taken */
+        return BH_TRACER_DETECTED;   /* slot already taken */
 
-    return CARAPACE_OK;                     /* slot is ours; attaches now EPERM */
+    return BH_OK;                     /* slot is ours; attaches now EPERM */
 }
 
-int carapace_guards_init(void)
+int bh_guards_init(void)
 {
-    carapace_guard_coredump();
-    return carapace_guard_antiptrace();
+    bh_guard_coredump();
+    return bh_guard_antiptrace();
 }

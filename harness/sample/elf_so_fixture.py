@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — minimal ELF shared-object fixture (Slice R verify helper).
+# blue-harness — minimal ELF shared-object fixture (Slice R verify helper).
 #
 # No cross-compiler in the dev container, and the Mach-O/PE fixtures set the
 # precedent: build a structurally valid ELF64 AArch64 shared object (ET_DYN, the

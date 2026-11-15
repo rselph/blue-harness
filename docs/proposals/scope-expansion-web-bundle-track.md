@@ -18,7 +18,7 @@
 
 ## 1. TL;DR — the decision in one page
 
-- **The question.** Should Carapace add a second, separately-tiered **web/bundle**
+- **The question.** Should blue-harness add a second, separately-tiered **web/bundle**
   track — Electron (ASAR / V8 bytecode), minified/obfuscated **JavaScript**,
   **WebAssembly**, and **managed .NET / CIL (IL)** — alongside the native +
   mobile core?
@@ -41,7 +41,7 @@
   trust decision server-side** (`CLAUDE.md` §3).
 - **Two things change the picture.** (1) **NativeAOT / IL2CPP**: the realistic
   "harden my .NET/Unity app" answer is to compile to a **native** PE/ELF/Mach-O,
-  which folds into Carapace's **existing native track** — *no scope change needed*.
+  which folds into blue-harness's **existing native track** — *no scope change needed*.
   (2) **Mobile overlap**: .NET MAUI / Xamarin-on-Android is managed IL inside an
   APK, which Track B (Android APK/AAB) already claims by construction — a
   **mobile-track** decision, not a web/bundle §2 decision.
@@ -77,7 +77,7 @@ Q/R/S). This is purely about whether to *add* a second track.
 
 ## 3. The test every candidate must pass (P0 north star)
 
-Carapace exists to defend against the **Priority-0** threat: *a non-expert points
+blue-harness exists to defend against the **Priority-0** threat: *a non-expert points
 an LLM-driven agent / MCP / skill at a target and gets readable code, a patch, or a
 working hook from one sentence* — running an **unrestricted local model**, so
 "the AI will refuse" is **never** a defense (`CLAUDE.md` §2). Every lever below is
@@ -100,7 +100,7 @@ multipliers.
 Full detail, citations and dates live in the four research notes
 (`research/findings/2026-11-14-{electron,js-deobf,wasm,dotnet-il}-re-landscape.md`).
 Condensed here so the decision can be made without opening them. **All tiers below
-are analysis judgments from cited sources; none is Carapace-measured yet.**
+are analysis judgments from cited sources; none is blue-harness-measured yet.**
 
 ### 4.1 Managed .NET / CIL (IL) — *most exposed*
 ECMA-335 IL is self-describing: full type/method/field names, generics and control
@@ -365,7 +365,7 @@ edit is made, and no harden/audit code for these formats is built.
 ## Review log
 
 - Lead 2026-11-14: synthesised from four same-day Scout notes; all tiers are
-  analysis judgments (none Carapace-measured); unverified items (BLA stats, PT
+  analysis judgments (none blue-harness-measured); unverified items (BLA stats, PT
   Swarm bytenode date, `de4dot` currency, every AI-layer tier) flagged inline.
   Pending Evaluator sign-off.
 - Evaluator 2026-11-14: **signed-off (with optional nits)** — tiers faithfully

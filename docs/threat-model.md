@@ -1,6 +1,6 @@
 # Threat Model
 
-> What Carapace defends, against whom, under what assumptions, and where the
+> What blue-harness defends, against whom, under what assumptions, and where the
 > hard limits are. Everything in this repo should trace back to something here.
 
 ## What we protect
@@ -30,7 +30,7 @@ AI agent** rather than a skilled reverser. We assume the adversary:
 Client-side hardening buys **time and cost**, deters casual/low-effort attackers,
 protects against automated/at-scale analysis, and creates detectable tamper
 events. It never provides cryptographic-grade secrecy for a motivated attacker.
-Carapace states this plainly in its reports and never contradicts it.
+blue-harness states this plainly in its reports and never contradicts it.
 
 ## Defensive goals (in priority order)
 1. **Relocate** what must not leak to the server (eliminate the exposure).

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — dev<->release IDENTITY TRANSFORM (Slice B).
+# blue-harness — dev<->release IDENTITY TRANSFORM (Slice B).
 #
 # WHAT THIS IS
 #   A build-time transform that keeps ONE clean dev source/binary and emits a
@@ -170,7 +170,7 @@ def resolve(map_path, name):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Carapace dev<->release identity transform.")
+    ap = argparse.ArgumentParser(description="blue-harness dev<->release identity transform.")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     t = sub.add_parser("transform", help="produce a release binary + private mapping")

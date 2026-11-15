@@ -1,4 +1,4 @@
-/* Carapace Slice F sample — uses strings the harness protects, by id only.
+/* blue-harness Slice F sample — uses strings the harness protects, by id only.
  *
  * ONE source, two builds (see Makefile), differing only in the generated header:
  *   sample_strings_plain : strings stored plaintext  -> visible to `strings`
@@ -15,24 +15,24 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "carapace_strings.h"
-#ifndef CARAPACE_GEN_HEADER
-#define CARAPACE_GEN_HEADER "carapace_strings_gen.h"
+#include "bh_strings.h"
+#ifndef BH_GEN_HEADER
+#define BH_GEN_HEADER "bh_strings_gen.h"
 #endif
-#include CARAPACE_GEN_HEADER   /* for the CSTR_* ids + CARAPACE_ENC_COUNT */
+#include BH_GEN_HEADER   /* for the CSTR_* ids + BH_ENC_COUNT */
 
 int main(int argc, char **argv)
 {
     const char *mode = (argc > 1) ? argv[1] : "run";
 
     if (strcmp(mode, "list") == 0) {
-        for (int i = 0; i < CARAPACE_ENC_COUNT; i++)
-            printf("%s\n", carapace_cstr(i));
+        for (int i = 0; i < BH_ENC_COUNT; i++)
+            printf("%s\n", bh_cstr(i));
         return 0;
     }
 
     /* default: a working app that actually uses a protected string */
-    printf("endpoint=%s\n", carapace_cstr(CSTR_API_URL));
+    printf("endpoint=%s\n", bh_cstr(CSTR_API_URL));
     printf("sample_strings: ran OK\n");
     return 0;
 }

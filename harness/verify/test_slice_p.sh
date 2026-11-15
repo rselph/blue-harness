@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice P (Windows PE harden path).
+# blue-harness — VERIFY harness for Slice P (Windows PE harden path).
 #
 # PE was audit-only (Slice G). Slice P gives it a post-build HARDEN path with three
 # provable, non-breaking levers, proven STRUCTURALLY / byte-level on Linux with NO
@@ -12,7 +12,7 @@
 #       past the end of every section's raw data (never mapped).
 #   (C) honeytokens — audit flips absent→present; tokens unique + plausible (AKIA)
 #       + whole-file-strings visible; attributable via a PRIVATE ledger; inert.
-#   (D) the skill drives it (`carapace apply` = strip; `carapace harden` = all three).
+#   (D) the skill drives it (`blue-harness apply` = strip; `blue-harness harden` = all three).
 #   (E) honest: tier+bypass on every lever, never "unbreakable", the Windows-host
 #       caveat is printed, and non-PE / nothing-to-strip inputs are refused cleanly.
 #
@@ -24,10 +24,10 @@ REPO="$(cd ../.. && pwd)"
 AUDIT="$REPO/harness/audit/pe_exposure_audit.py"
 AUDIT_DIR="$REPO/harness/audit"
 FIX="$REPO/harness/sample/pe_fixture.py"
-STRIP="$REPO/harness/harden/carapace_pe_strip.py"
-EXH="$REPO/harness/harden/carapace_pe_exhaust.py"
-HONEY="$REPO/harness/harden/carapace_pe_honeytokens.py"
-CARA="python3 $REPO/skill/carapace.py"
+STRIP="$REPO/harness/harden/bh_pe_strip.py"
+EXH="$REPO/harness/harden/bh_pe_exhaust.py"
+HONEY="$REPO/harness/harden/bh_pe_honeytokens.py"
+CARA="python3 $REPO/skill/blue_harness.py"
 ELF_DEV="$REPO/harness/sample/sample_dev"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -119,7 +119,7 @@ if b[:len(a)] != a:            # append-only
     sys.exit(1)
 pe = PE(sys.argv[1])
 mapped_end = max([0] + [s["PointerToRawData"] + s["SizeOfRawData"] for s in pe.sections if s["SizeOfRawData"]])
-marker = b.find(b"__CARAPACE_PE_EXH_")
+marker = b.find(b"__BH_PE_EXH_")
 sys.exit(0 if marker >= mapped_end and marker >= len(a) else 1)
 PY
 grew=$(python3 -c 'import sys;print(len(open(sys.argv[1],"rb").read())-len(open(sys.argv[2],"rb").read()))' "$WORK/exh.exe" "$WORK/exposed.exe")
@@ -157,11 +157,11 @@ sys.exit(0 if set(a).isdisjoint(b) else 1)' "$WORK/ledger.json" "$WORK/ledger2.j
 # =================================================================(D) SKILL
 hdr "(D) SKILL drives it (apply = strip; harden = all three)"
 $CARA apply "$WORK/exposed.exe" --out "$WORK/skill.stripped.exe" > "$WORK/skill_apply.txt" 2>&1 \
-    && ok "carapace apply ran on a PE" || { bad "carapace apply failed"; cat "$WORK/skill_apply.txt"; }
+    && ok "blue-harness apply ran on a PE" || { bad "blue-harness apply failed"; cat "$WORK/skill_apply.txt"; }
 [ "$(python3 "$AUDIT" --json "$WORK/skill.stripped.exe" | python3 -c 'import json,sys;print(json.load(sys.stdin)["symbols_present"])')" = "False" ] \
-    && ok "carapace apply produced a symbol-stripped PE" || bad "carapace apply did not strip"
+    && ok "blue-harness apply produced a symbol-stripped PE" || bad "blue-harness apply did not strip"
 $CARA harden "$WORK/exposed.exe" --out "$WORK/skill.hardened.exe" --build-tag CI-run > "$WORK/skill_harden.txt" 2>&1 \
-    && ok "carapace harden ran on a PE" || { bad "carapace harden failed"; cat "$WORK/skill_harden.txt"; }
+    && ok "blue-harness harden ran on a PE" || { bad "blue-harness harden failed"; cat "$WORK/skill_harden.txt"; }
 python3 "$AUDIT" --json "$WORK/skill.hardened.exe" > "$WORK/skh.json"
 [ "$(jget "$WORK/skh.json" symbols_present)" = "False" ] && [ "$(jget "$WORK/skh.json" decoy_overlay_present)" = "True" ] && [ "$(jget "$WORK/skh.json" honeytokens_present)" = "True" ] \
     && ok "harden applied all three (symbols stripped + decoy + honeytokens)" || bad "harden did not apply all three passes"

@@ -1,4 +1,4 @@
-# Carapace — top-level entry point. Measure it, harden it, prove it.
+# blue-harness — top-level entry point. Measure it, harden it, prove it.
 #
 #   make demo     see it in ~30s: audit a sample, show its plan, prove the defenses
 #   make verify   run every verify slice and print one posture summary
@@ -17,7 +17,7 @@ CRACKME_BUILD := harness/crackme/build
 demo:
 	@echo "### 1/2  MEASURE — audit a sample build + show its hardening plan"
 	@$(MAKE) -s -C harness/sample sample_dev
-	@python3 skill/carapace.py report harness/sample/sample_dev
+	@python3 skill/blue_harness.py report harness/sample/sample_dev
 	@echo
 	@echo "### 2/2  PROVE — demonstrate every countermeasure firing"
 	@bash harness/verify/run_all.sh
@@ -27,7 +27,7 @@ verify:
 
 audit:
 	@$(MAKE) -s -C harness/sample sample_dev
-	@python3 skill/carapace.py audit "$(BIN)"
+	@python3 skill/blue_harness.py audit "$(BIN)"
 
 audit-pe:
 	@python3 harness/audit/pe_exposure_audit.py "$(BIN)"
@@ -40,30 +40,30 @@ audit-mobile:
 
 report:
 	@$(MAKE) -s -C harness/sample sample_dev
-	@python3 skill/carapace.py report "$(BIN)"
+	@python3 skill/blue_harness.py report "$(BIN)"
 
 harden:
 	@$(MAKE) -s -C harness/sample sample_dev
-	@python3 skill/carapace.py harden "$(BIN)"
+	@python3 skill/blue_harness.py harden "$(BIN)"
 
 harden-pe:
-	@python3 skill/carapace.py harden "$(BIN)"
+	@python3 skill/blue_harness.py harden "$(BIN)"
 
 harden-macho:
-	@python3 skill/carapace.py harden "$(BIN)"
+	@python3 skill/blue_harness.py harden "$(BIN)"
 
 # Mobile containers (Slice R): reach into an APK/AAB/IPA, harden the native
 # payloads inside (ELF .so / Mach-O) via the per-format hardeners, and repack.
 # One target covers all three (magic-byte dispatch); apk/ipa are convenience aliases.
 harden-mobile:
-	@python3 skill/carapace.py harden "$(BIN)"
+	@python3 skill/blue_harness.py harden "$(BIN)"
 
 harden-apk: harden-mobile
 
 harden-ipa: harden-mobile
 
 install-skill:
-	@python3 skill/carapace.py install
+	@python3 skill/blue_harness.py install
 
 # One command: build the sealed CrackMe pair, drive an attacker agent against the
 # baseline AND hardened builds, and print the honest before/after. OPERATOR-GATED:
@@ -106,7 +106,7 @@ clean:
 	@echo "cleaned."
 
 help:
-	@echo "Carapace — defensive anti-reverse-engineering hardening & audit harness"
+	@echo "blue-harness — defensive anti-reverse-engineering hardening & audit harness"
 	@echo
 	@echo "  make demo     see it in ~30s (audit a sample, show the plan, prove the defenses)"
 	@echo "  make verify   run every verify slice and print one posture summary"
@@ -120,7 +120,7 @@ help:
 	@echo "  make harden-macho BIN=<o> Mach-O harden: local-symbol strip + decoy non-mapped"
 	@echo "                            segment + honeytokens (honest)"
 	@echo "  make harden-mobile BIN=<apk|aab|ipa> harden the native payloads inside + repack (you re-sign)"
-	@echo "  make install-skill        symlink the skill into .claude/skills/carapace"
+	@echo "  make install-skill        symlink the skill into .claude/skills/blue-harness"
 	@echo "  make slice-k-run MODEL=<m> [TARGET=url]  empirical before/after (OPERATOR VM; honest)"
 	@echo "  make slice-k-run-mock     prove the empirical pipeline with a MOCK attacker (no model)"
 	@echo "  make clean    remove build artifacts"

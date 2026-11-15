@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — ELF exposure AUDIT scanner (audit before harden; CLAUDE.md §8)
+# blue-harness — ELF exposure AUDIT scanner (audit before harden; CLAUDE.md §8)
 #
 # WHAT THIS IS
 #   A read-only exposure scanner for a single Linux ELF. It reads the *same
@@ -494,18 +494,18 @@ def analyze(path):
     # implementation tell (the first two FIPS 180-4 round constants, LE bytes).
     sha256_tell = (b"\x98\x2f\x8a\x42" in blob_lower) and (b"\x91\x44\x37\x71" in blob_lower)
     integrity_guard_present = (
-        ("carapace_hotfn_checksum" in syms) or ("carapace_integrity_response" in syms)
+        ("bh_hotfn_checksum" in syms) or ("bh_integrity_response" in syms)
         or sha256_tell
     )
     # Anti-Frida detector: our scan symbol, or the Frida signature strings it embeds.
     antifrida_guard_present = (
-        ("carapace_antifrida_scan" in syms)
+        ("bh_antifrida_scan" in syms)
         or (b"gum-js-loop" in blob_lower) or (b"frida-agent" in blob_lower)
     )
     # Build-time string encryption: the enc-mode marker symbol (a name, not a
     # plaintext tell). The loader alone isn't enough — a plaintext build also
     # links it; only the encrypted build carries this marker.
-    string_encryption_present = "carapace_strings_enc" in syms
+    string_encryption_present = "bh_strings_enc" in syms
 
     # Build-time analysis-surface EXHAUSTION (Slice I). Our decoy non-alloc
     # sections (SHF_ALLOC clear -> never mapped at runtime) and synthetic LOCAL
@@ -515,10 +515,10 @@ def analyze(path):
     SHF_ALLOC = 0x2
     SHT_PROGBITS = 1
     exh_sections = [sh for name, sh in elf.sections.items()
-                    if name.startswith(".carapace_exh")]
+                    if name.startswith(".bh_exh")]
     exh_decoy_bytes = sum(sh["size"] for sh in exh_sections)
     exh_synth_symbols = sum(1 for s in elf.iter_symbols()
-                            if s["name"].startswith("carapace_exh_"))
+                            if s["name"].startswith("bh_exh_"))
     # general static-surface inflation: PROGBITS sections NOT mapped into memory
     # (flags lack SHF_ALLOC) as a fraction of the whole file. Baseline carries a
     # little (.comment); our pass drives it up.
@@ -531,7 +531,7 @@ def analyze(path):
     # surfaces as "findings" (poison) and that double as an attribution tripwire
     # if one leaks. Harness default section name is the tell; production renames
     # it (so detection here is a convenience, not the defense — see honey README).
-    honey_blob = elf.section_bytes(".carapace_honey")
+    honey_blob = elf.section_bytes(".bh_honey")
     honeytoken_count = sum(1 for ln in honey_blob.split(b"\n") if ln.strip())
     honeytokens_present = honeytoken_count > 0
 
@@ -643,7 +643,7 @@ def render(s):
         return yes if b else no
     L = []
     L.append("=" * 68)
-    L.append(f"  Carapace ELF Exposure Audit — {s['file']}  [{s['arch']}]")
+    L.append(f"  blue-harness ELF Exposure Audit — {s['file']}  [{s['arch']}]")
     L.append("=" * 68)
     L.append(f"  EXPOSURE SCORE : {s['score']}/100")
     L.append(f"  POSTURE TIER   : {s['tier']}")
@@ -706,7 +706,7 @@ def render(s):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Carapace ELF exposure audit (read-only).")
+    ap = argparse.ArgumentParser(description="blue-harness ELF exposure audit (read-only).")
     ap.add_argument("binary", help="path to the ELF to audit")
     ap.add_argument("--json", action="store_true", help="emit machine-readable JSON only")
     args = ap.parse_args(argv)

@@ -1,11 +1,11 @@
-/* Carapace runtime code-integrity + attestation — implementation.
+/* blue-harness runtime code-integrity + attestation — implementation.
  * Self-contained SHA-256 + HMAC-SHA256 (no OpenSSL), so the guard links with
  * libc only. The algorithm is standard FIPS 180-4 / RFC 2104; correctness is
  * cross-checked against Python's hashlib in ../verify/test_slice_d.sh (the C
  * client MAC must equal the Python server's expected MAC for a pristine build).
  */
 #define _GNU_SOURCE
-#include "carapace_integrity.h"
+#include "bh_integrity.h"
 #include <string.h>
 
 /* ---- SHA-256 (FIPS 180-4) --------------------------------------------- */
@@ -83,15 +83,15 @@ static void sha256_final(sha256_ctx *c, uint8_t out[32]) {
     }
 }
 
-void carapace_sha256(const uint8_t *data, size_t len, uint8_t out[32]) {
+void bh_sha256(const uint8_t *data, size_t len, uint8_t out[32]) {
     sha256_ctx c; sha256_init(&c); sha256_update(&c, data, len); sha256_final(&c, out);
 }
 
 /* ---- HMAC-SHA256 (RFC 2104) ------------------------------------------- */
-void carapace_hmac_sha256(const uint8_t *key, size_t key_len,
+void bh_hmac_sha256(const uint8_t *key, size_t key_len,
                           const uint8_t *msg, size_t msg_len, uint8_t out[32]) {
     uint8_t k[64] = {0};
-    if (key_len > 64) carapace_sha256(key, key_len, k);
+    if (key_len > 64) bh_sha256(key, key_len, k);
     else memcpy(k, key, key_len);
     uint8_t ipad[64], opad[64];
     for (int i = 0; i < 64; i++) { ipad[i] = k[i] ^ 0x36; opad[i] = k[i] ^ 0x5c; }
@@ -112,16 +112,16 @@ void carapace_hmac_sha256(const uint8_t *key, size_t key_len,
 /* The function to protect and an end marker right after it, so we can checksum
  * the exact bytes. If the linker reorders (len out of range) we fall back to a
  * fixed window — still covers the prologue an attacker usually patches. */
-extern int carapace_hotfn(int x);
-extern void carapace_hotfn_end(void);
+extern int bh_hotfn(int x);
+extern void bh_hotfn_end(void);
 
-void carapace_hotfn_checksum(uint8_t out[32]) {
-    const uint8_t *start = (const uint8_t *)(void *)carapace_hotfn;
-    const uint8_t *end   = (const uint8_t *)(void *)carapace_hotfn_end;
+void bh_hotfn_checksum(uint8_t out[32]) {
+    const uint8_t *start = (const uint8_t *)(void *)bh_hotfn;
+    const uint8_t *end   = (const uint8_t *)(void *)bh_hotfn_end;
     long len = (long)(end - start);
     if (len <= 0 || len > 4096)
         len = 128;                      /* fallback window */
-    carapace_sha256(start, (size_t)len, out);
+    bh_sha256(start, (size_t)len, out);
 }
 
 static int hexval(char c) {
@@ -142,13 +142,13 @@ static size_t unhex(const char *hex, uint8_t *out, size_t outcap) {
     return n;
 }
 
-void carapace_integrity_response(const uint8_t *nonce, size_t nonce_len,
+void bh_integrity_response(const uint8_t *nonce, size_t nonce_len,
                                  uint8_t out_mac[32]) {
     uint8_t key[32];
-    size_t klen = unhex(CARAPACE_ATTEST_KEY_HEX, key, sizeof key);
+    size_t klen = unhex(BH_ATTEST_KEY_HEX, key, sizeof key);
 
     uint8_t checksum[32];
-    carapace_hotfn_checksum(checksum);
+    bh_hotfn_checksum(checksum);
 
     /* msg = nonce || checksum */
     uint8_t msg[256];
@@ -157,5 +157,5 @@ void carapace_integrity_response(const uint8_t *nonce, size_t nonce_len,
     memcpy(msg, nonce, nonce_len); mlen += nonce_len;
     memcpy(msg + mlen, checksum, 32); mlen += 32;
 
-    carapace_hmac_sha256(key, klen, msg, mlen, out_mac);
+    bh_hmac_sha256(key, klen, msg, mlen, out_mac);
 }

@@ -6,7 +6,7 @@
 | ------- | --------- |
 | `main`  | Yes       |
 
-Carapace has no tagged release line yet. Fixes land on `main`.
+blue-harness has no tagged release line yet. Fixes land on `main`.
 
 ## Reporting a vulnerability
 

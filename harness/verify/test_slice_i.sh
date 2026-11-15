@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice I (analysis-surface EXHAUSTION).
+# blue-harness — VERIFY harness for Slice I (analysis-surface EXHAUSTION).
 #
 # Proves, on a real sample ELF, that the exhaustion pass:
 #   (A) the AUDIT flips absent<->present and MEASURES the inflated surface;
@@ -17,7 +17,7 @@ set -u
 cd "$(dirname "$0")"
 SAMPLE_DIR="$(cd ../sample && pwd)"
 AUDIT="$(cd ../audit && pwd)/elf_exposure_audit.py"
-EXHAUST="$(cd ../harden && pwd)/carapace_exhaust.py"
+EXHAUST="$(cd ../harden && pwd)/bh_exhaust.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -63,20 +63,20 @@ cmp -s "$WORK/dyn_base.txt" "$WORK/dyn_exh.txt" && ok "exports (.dynsym) byte-id
 
 # -------------------------------------------------- (C) proven non-loaded -----
 hdr "(C) decoy NON-ALLOCATED; synthetic symbols LOCAL + .symtab-only"
-# every .carapace_exh_* section must lack SHF_ALLOC (0x2) => never mapped at runtime
+# every .bh_exh_* section must lack SHF_ALLOC (0x2) => never mapped at runtime
 python3 - "$EXH" "$AUDIT" <<'PY' && ok "all decoy sections are non-alloc (SHF_ALLOC clear) — never mapped" || bad "a decoy section is allocated (would load at runtime)"
 import sys,os
 sys.path.insert(0, os.path.dirname(sys.argv[2]))
 from elf_exposure_audit import ELF
 elf=ELF(sys.argv[1]); SHF_ALLOC=0x2
-sec=[(n,sh) for n,sh in elf.sections.items() if n.startswith(".carapace_exh_")]
+sec=[(n,sh) for n,sh in elf.sections.items() if n.startswith(".bh_exh_")]
 sys.exit(0 if sec and all(not (sh["flags"] & SHF_ALLOC) for _,sh in sec) else 1)
 PY
 # synthetic symbols present in .symtab ...
-nsym="$(nm "$EXH" 2>/dev/null | grep -c 'carapace_exh_fn_')"
+nsym="$(nm "$EXH" 2>/dev/null | grep -c 'bh_exh_fn_')"
 [ "$nsym" = "$NSYM" ] && ok "$NSYM synthetic FUNC symbols present in .symtab" || bad "symtab synthetic count = $nsym (want $NSYM)"
 # ... and ABSENT from .dynsym (no export pollution)
-dsym="$(readelf -WsD "$EXH" 2>/dev/null | grep -c 'carapace_exh_fn_' || true)"
+dsym="$(readelf -WsD "$EXH" 2>/dev/null | grep -c 'bh_exh_fn_' || true)"
 [ "${dsym:-0}" = "0" ] && ok "no synthetic symbol leaked into .dynsym (exports clean)" || bad "$dsym synthetic symbols leaked into .dynsym"
 
 # -------------------------------------------------- (D) deterministic ---------

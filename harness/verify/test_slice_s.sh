@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice S (empirical re-run PACKAGING).
+# blue-harness — VERIFY harness for Slice S (empirical re-run PACKAGING).
 #
 # WHAT THIS PROVES (and, honestly, what it does NOT)
 #   Slice S turns the parked, manual Slice-K empirical run into ONE scored command
@@ -105,7 +105,7 @@ FLAG='CARA{verify-s-7e3a-not-a-real-secret}'
 BD="$CRACKME/build"
 BUILT=0
 rm -rf "$BD"
-if CARAPACE_CRACKME_SECRET="$FLAG" bash "$CRACKME/build_crackme.sh" > "$WORK/build.log" 2>&1; then
+if BH_CRACKME_SECRET="$FLAG" bash "$CRACKME/build_crackme.sh" > "$WORK/build.log" 2>&1; then
     BASE="$BD/crackme_baseline"; HARD="$BD/crackme_hardened"
     if [ -x "$BASE" ] && [ -x "$HARD" ] && \
        "$PY" -c "import sys;sys.exit(0 if open(sys.argv[1],'rb').read(4)==b'\x7fELF' else 1)" "$BASE"; then

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice F (build-time string encryption + runtime
+# blue-harness — VERIFY harness for Slice F (build-time string encryption + runtime
 # decode loader). Closes the "roadmap" gap: live strings are absent from a static
 # `strings`/list_strings view but correct at runtime.
 #
@@ -30,10 +30,10 @@ jbool() { python3 -c 'import json,sys;print(str(json.load(open(sys.argv[1]))[sys
 # ---------------------------------------------------------------- build ----
 hdr "BUILD (one manifest -> plaintext + encrypted builds)"
 make -C "$SAMPLE_DIR" clean >/dev/null 2>&1
-if make -C "$SAMPLE_DIR" sample_strings_plain sample_strings_enc >/tmp/carapace_f_build.log 2>&1; then
+if make -C "$SAMPLE_DIR" sample_strings_plain sample_strings_enc >/tmp/bh_f_build.log 2>&1; then
     ok "sample_strings_plain + sample_strings_enc built"
 else
-    bad "build failed"; cat /tmp/carapace_f_build.log; exit 1
+    bad "build failed"; cat /tmp/bh_f_build.log; exit 1
 fi
 PLAIN="$SAMPLE_DIR/sample_strings_plain"
 ENC="$SAMPLE_DIR/sample_strings_enc"

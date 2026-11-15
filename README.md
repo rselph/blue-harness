@@ -1,6 +1,6 @@
-<h1 align="center">🛡️ Carapace</h1>
+<h1 align="center">🛡️ blue-harness</h1>
 <p align="center"><em>Make your own app expensive to reverse — measure it, harden it, prove it.</em></p>
-<p align="center"><strong>Anyone can now reverse-engineer a shipped app by typing one sentence to an AI agent; Carapace makes that expensive, measures how expensive, and proves each defense actually fires.</strong></p>
+<p align="center"><strong>Anyone can now reverse-engineer a shipped app by typing one sentence to an AI agent; blue-harness makes that expensive, measures how expensive, and proves each defense actually fires.</strong></p>
 
 <p align="center">
   A build-time <strong>anti-reverse-engineering hardening &amp; audit harness</strong>
@@ -19,7 +19,7 @@
 ---
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="Carapace demo: a plain build audits at 84/100 (wide open); the guarded build is hardened in one command, re-audits at 40/100 (partially hardened), and still runs" width="860">
+  <img src="docs/assets/demo.gif" alt="blue-harness demo: a plain build audits at 84/100 (wide open); the guarded build is hardened in one command, re-audits at 40/100 (partially hardened), and still runs" width="860">
 </p>
 <p align="center"><sub>Recorded with <a href="docs/assets/demo.tape">docs/assets/demo.tape</a>. Real output, nothing staged.</sub></p>
 
@@ -41,7 +41,7 @@ make harden BIN=path/to/your/binary   # apply every post-build hardening (honest
 No external dependencies: a C toolchain, `make`, and Python 3.
 
 > [!CAUTION]
-> ### 🔴 Help wanted — test Carapace against a bigger model
+> ### 🔴 Help wanted — test blue-harness against a bigger model
 > Our before/after below is **one run (N=1)** by a small, 4-bit-quantised **7B**
 > model on a laptop (RTX 3070, 8 GB VRAM / 16 GB RAM) — a **floor, not a ceiling**.
 > If you have the hardware, point a **larger local or a frontier model** at the same
@@ -58,7 +58,7 @@ Reverse engineering used to take real skill. Now anyone can point an AI agent at
 binary, type one sentence, and get back readable code or a working patch — and
 commodity cracking of shipped software exploded with it.
 
-Carapace is a **defensive** toolkit aimed at that threat. It runs against **your own
+blue-harness is a **defensive** toolkit aimed at that threat. It runs against **your own
 build** and does three things, audit-first:
 
 - **Audit** — scan a build and score how exposed it is (symbols, strings, entropy,
@@ -141,21 +141,21 @@ hardening — with its tier and bypass, every time.
 would only be added later as a separate, clearly-labelled track — never silently,
 never at the cost of the "prove it" guarantee.
 
-## How Carapace compares
+## How blue-harness compares
 
-Carapace isn't the only tool defending against AI-assisted RE — a good sign the
+blue-harness isn't the only tool defending against AI-assisted RE — a good sign the
 threat is real. The difference is **depth on native binaries and proof instead of
 assertion**. (Peer descriptions below are from their own READMEs; we ran none of
 them.)
 
-| | **Carapace** | BLA (~2.3k★) | antirea (~36★) | AREA (~3★) |
+| | **blue-harness** | BLA (~2.3k★) | antirea (~36★) | AREA (~3★) |
 |---|---|---|---|---|
 | **Focus** | native binaries + mobile (ELF / PE / Mach-O) | breadth: JS / Electron / Wasm / .NET bundles | agent instruction-file barriers | obfuscation toolbox |
 | **Native-binary defenses** | **proven to fire by tests** | README: Ghidra / Frida / LLDB "not run" | — | "designed-for", no measured results |
 | **Evidence of protection** | mechanism tests **+ a measured before/after** | internal estimates + a drift-check | self-limited ("no guarantee") | "deterrence, not proof" |
 | **Honesty** | tier + **named bypass on every defense** | status labels; estimate multipliers | states its own limits | "a determined human gets through" |
 
-Carapace has already absorbed the peers' best native-applicable ideas (surface
+blue-harness has already absorbed the peers' best native-applicable ideas (surface
 exhaustion, honeytoken poisoning) as its own, mechanism-proven countermeasures. See
 [the competitive scan](research/findings/2026-11-05-competitive-landscape.md).
 
@@ -190,7 +190,7 @@ Roadmap in [docs/STATE.md](docs/STATE.md).
 
 ## License
 
-Carapace is open source under the [GNU AGPL-3.0](LICENSE) and is free for
+blue-harness is open source under the [GNU AGPL-3.0](LICENSE) and is free for
 everyone, including businesses, as long as you comply with the AGPL. To use it
 in a closed-source product or a proprietary service without AGPL's copyleft
 obligations, a paid commercial license is available; see

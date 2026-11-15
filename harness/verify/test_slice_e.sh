@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice E (the front-door one-shot `report`).
+# blue-harness — VERIFY harness for Slice E (the front-door one-shot `report`).
 # Slice E ships no new countermeasure; this covers the new skill code so the
 # "done = tested" rule still holds. (run_all.sh runs this alongside A–D.)
 #
@@ -9,7 +9,7 @@ set -u
 cd "$(dirname "$0")"
 REPO="$(cd ../.. && pwd)"
 SAMPLE_DIR="$(cd ../sample && pwd)"
-CARA="python3 $REPO/skill/carapace.py"
+CARA="python3 $REPO/skill/blue_harness.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -21,7 +21,7 @@ hdr() { echo; echo "== $* =="; }
 hdr "BUILD"
 make -C "$SAMPLE_DIR" sample_dev >/dev/null 2>&1 && ok "sample_dev built" || { bad "build failed"; exit 1; }
 
-hdr "carapace report (audit + ordered plan in one call)"
+hdr "blue-harness report (audit + ordered plan in one call)"
 $CARA report "$SAMPLE_DIR/sample_dev" > "$WORK/report.txt" 2>&1 && ok "report exits 0" || bad "report exited nonzero"
 
 grep -q "EXPOSURE SCORE" "$WORK/report.txt" && ok "report includes the full audit" || bad "audit section missing"

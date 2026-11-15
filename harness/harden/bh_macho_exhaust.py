@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — Mach-O analysis-surface EXHAUSTION (Slice Q): decoy NON-MAPPED segment.
+# blue-harness — Mach-O analysis-surface EXHAUSTION (Slice Q): decoy NON-MAPPED segment.
 #
 # WHAT THIS IS
 #   The Mach-O analog of the ELF exhaust pass (Slice I) and the PE decoy overlay
@@ -9,7 +9,7 @@
 #         segment/section/table the file declares, so the loader maps none of them,
 #         yet a whole-file strings/entropy/"dump every range" sweep still reads them
 #         (the Mach-O analog of the PE overlay); and
-#     (2) a real, added LC_SEGMENT_64 named __CARAPACE_EXH with vmsize = 0
+#     (2) a real, added LC_SEGMENT_64 named __BH_EXH with vmsize = 0
 #         (initprot = maxprot = 0, nsects = 0) — a genuine load command that dyld
 #         IGNORES (a vmsize==0 segment reserves no address space → maps nothing), so a
 #         load-command / segment dump (otool -l-style, which the agent reads to build
@@ -39,10 +39,10 @@ import random
 import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from carapace_macho_segment import (append_trailer, add_decoy_segment, SegError)  # noqa: E402
+from bh_macho_segment import (append_trailer, add_decoy_segment, SegError)  # noqa: E402
 
-MARKER = b"__CARAPACE_MACHO_EXH_"
-DECOY_SEGNAME = "__CARAPACE_EXH"
+MARKER = b"__BH_MACHO_EXH_"
+DECOY_SEGNAME = "__BH_EXH"
 
 
 def _det_bytes(seed, n):
@@ -85,7 +85,7 @@ def exhaust(src, dst, n_regions, region_size, seed=0xC0FFEE):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Carapace Mach-O analysis-surface exhaustion (decoy NON-MAPPED segment + "
+        description="blue-harness Mach-O analysis-surface exhaustion (decoy NON-MAPPED segment + "
                     "trailer; COST not prevention).")
     ap.add_argument("src")
     ap.add_argument("dst")
@@ -99,9 +99,9 @@ def main(argv=None):
     try:
         info = exhaust(a.src, a.dst, a.regions, a.region_size, a.seed)
     except (SegError, IsADirectoryError) as e:
-        print(f"carapace-macho-exhaust error: {e}", file=sys.stderr)
+        print(f"blue-harness-macho-exhaust error: {e}", file=sys.stderr)
         return 2
-    print(f"[carapace-macho-exhaust] {a.src} -> {a.dst}")
+    print(f"[blue-harness-macho-exhaust] {a.src} -> {a.dst}")
     print(f"  decoy trailer ...... {info['decoy_regions']} regions ({info['decoy_bytes']} bytes) "
           f"at offset {info['trailer_off']}")
     print(f"  non-mapped proof ... trailer at {info['trailer_off']} >= mapped_end "

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — minimal PE32+ fixture generator (Slice G verify helper).
+# blue-harness — minimal PE32+ fixture generator (Slice G verify helper).
 #
 # No mingw / pefile in the dev container, so the verify builds its own PE test
 # inputs here: a structurally valid PE32+ (x86-64) with configurable
@@ -113,7 +113,7 @@ def build(path, dll_characteristics=0, imports=None, strings=None,
 
     debug_dir = (0, 0)
     if pdb:
-        cv = b"RSDS" + bytes(16) + struct.pack("<I", 1) + b"C:\\build\\carapace\\sample_soft.pdb\x00"
+        cv = b"RSDS" + bytes(16) + struct.pack("<I", 1) + b"C:\\build\\blue-harness\\sample_soft.pdb\x00"
         cv_rva = add(cv)
         dbg = struct.pack("<IIHHIII", 0, 0, 0, 0, 2, len(cv), cv_rva) + struct.pack("<I", rva_off(cv_rva))
         dbg_rva = add(dbg)

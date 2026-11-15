@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — Slice S: the AI-RE ATTACKER AGENT (loop + tool-call shim + backends).
+# blue-harness — Slice S: the AI-RE ATTACKER AGENT (loop + tool-call shim + backends).
 #
 # WHY THIS EXISTS
 #   The 2026-11-11 Slice-K run (research/findings/2026-11-11-slice-k-empirical-run.md)
@@ -20,7 +20,7 @@
 #
 # DEFENSIVE SCOPE (CLAUDE.md §3)
 #   This drives an attacker agent against the OPERATOR'S OWN sealed CrackMe to
-#   MEASURE how much Carapace raised the cost. The live run is OPERATOR-GATED: it
+#   MEASURE how much blue-harness raised the cost. The live run is OPERATOR-GATED: it
 #   needs an isolated, operator-owned VM, the operator's chosen model, and the
 #   operator's hardware (see docs/workflow/slice-k-empirical-runbook.md). This file
 #   does NOT download, serve, or bundle any model; OllamaBackend only POSTs to an
@@ -391,7 +391,7 @@ def run_agent(backend, binary, task=DEFAULT_TASK, cwd=None, max_steps=20,
         f"[{m['role']}] {m.get('content','')}" for m in messages)
     return {
         "variant": None,            # caller stamps this
-        "agent": "carapace-slice-s-agent",
+        "agent": "blue-harness-slice-s-agent",
         "model": getattr(backend, "model", backend.__class__.__name__),
         "tokens": tokens,
         "wall_clock_s": wall if getattr(backend, "grade", None) == "live" else None,

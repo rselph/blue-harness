@@ -13,7 +13,7 @@ operator-owned VM**, with your chosen model served locally (e.g. Ollama) and you
 flag in the environment:
 
 ```bash
-export CARAPACE_CRACKME_SECRET='CARA{your-own-flag}'   # never enters the repo
+export BH_CRACKME_SECRET='CARA{your-own-flag}'   # never enters the repo
 make slice-k-run MODEL=<your-model> TARGET=http://127.0.0.1:11434
 ```
 
@@ -59,7 +59,7 @@ build. The scorer turns the *recorded* runs into an honest before/after:
 ## Step 1 — build the CrackMe (dev box)
 ```bash
 # Your real flag never touches the repo. Provide it one of two ways:
-export CARAPACE_CRACKME_SECRET='CARA{your-own-flag}'     # or:
+export BH_CRACKME_SECRET='CARA{your-own-flag}'     # or:
 # echo 'CARA{your-own-flag}' > harness/crackme/secret.local.txt   # (gitignored)
 
 bash harness/crackme/build_crackme.sh
@@ -67,7 +67,7 @@ bash harness/crackme/build_crackme.sh
 Produces, in `harness/crackme/build/` (gitignored):
 - `crackme_baseline` — flag plaintext, no guards (easy target)
 - `crackme_hardened` — flag string-encrypted + build-time guards + post-build
-  `carapace harden` (decoy / exhaust / honeytokens)
+  `blue-harness harden` (decoy / exhaust / honeytokens)
 - `crackme_hardened.honey-ledger.json` — **PRIVATE** (attribution key — keep it on
   the scoring box; never copy it to the VM or publish it)
 - `SEAL.json` — the **published** digest (safe to share; it is only a hash)

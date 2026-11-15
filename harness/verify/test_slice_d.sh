@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Implementation Slice D (runtime code-integrity +
+# blue-harness — VERIFY harness for Implementation Slice D (runtime code-integrity +
 # server-nonce attestation, and the anti-Frida detector; rea Cluster G).
 #
 # Proves, on a real sample ELF, WITHOUT installing any offensive tooling (we
@@ -33,14 +33,14 @@ jbool() { python3 -c 'import json,sys;print(str(json.load(open(sys.argv[1]))[sys
 # ---------------------------------------------------------------- build ----
 hdr "BUILD"
 make -C "$SAMPLE_DIR" clean >/dev/null 2>&1
-if make -C "$SAMPLE_DIR" sample_attest sample_baseline >/tmp/carapace_d_build.log 2>&1; then
+if make -C "$SAMPLE_DIR" sample_attest sample_baseline >/tmp/bh_d_build.log 2>&1; then
     ok "sample_attest + sample_baseline built"
 else
-    bad "build failed"; cat /tmp/carapace_d_build.log; exit 1
+    bad "build failed"; cat /tmp/bh_d_build.log; exit 1
 fi
 ATT="$SAMPLE_DIR/sample_attest"
 # a stand-in for an injected frida agent (path carries the real signature)
-echo 'int _carapace_fake_agent;' > "$WORK/fa.c"
+echo 'int _bh_fake_agent;' > "$WORK/fa.c"
 cc -shared -fPIC -o "$WORK/frida-agent-x86_64.so" "$WORK/fa.c" && ok "built frida-agent signature .so (no real Frida installed)" || bad "fake agent build failed"
 
 # ------------------------------------------------ (A) audit flip ----------

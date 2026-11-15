@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice R (mobile-container reach).
+# blue-harness — VERIFY harness for Slice R (mobile-container reach).
 #
 # Proves the harness can reach INTO a mobile container (APK/AAB/IPA — all ZIP),
 # enumerate the NATIVE payloads inside, DELEGATE each to the existing per-format
@@ -32,7 +32,7 @@ ELFAUDIT="$REPO/harness/audit/elf_exposure_audit.py"
 MACHOAUDIT="$REPO/harness/audit/macho_exposure_audit.py"
 FIX_ELF="$SAMPLE/elf_so_fixture.py"
 FIX_MACHO="$SAMPLE/macho_fixture.py"
-CARA="python3 $REPO/skill/carapace.py"
+CARA="python3 $REPO/skill/blue_harness.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -122,13 +122,13 @@ IPA_SYMS=$(python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));print(d["p
 # ---------------------------------------------------- (C) skill routes it
 hdr "(C) skill routes the container (Slice-M dispatch extended)"
 $CARA audit "$WORK/app.apk" > "$WORK/c_apk.txt" 2>&1
-grep -q "MOBILE-CONTAINER AUDIT" "$WORK/c_apk.txt" && grep -q "APK" "$WORK/c_apk.txt" && ok "carapace audit routes APK -> mobile audit" || bad "skill did not route APK"
+grep -q "MOBILE-CONTAINER AUDIT" "$WORK/c_apk.txt" && grep -q "APK" "$WORK/c_apk.txt" && ok "blue-harness audit routes APK -> mobile audit" || bad "skill did not route APK"
 $CARA audit "$WORK/app.ipa" > "$WORK/c_ipa.txt" 2>&1
-grep -q "IPA" "$WORK/c_ipa.txt" && grep -qi "ios" "$WORK/c_ipa.txt" && ok "carapace audit routes IPA -> mobile audit" || bad "skill did not route IPA"
+grep -q "IPA" "$WORK/c_ipa.txt" && grep -qi "ios" "$WORK/c_ipa.txt" && ok "blue-harness audit routes IPA -> mobile audit" || bad "skill did not route IPA"
 $CARA recommend "$WORK/app.apk" > "$WORK/c_rec.txt" 2>&1
-grep -qi "native payload" "$WORK/c_rec.txt" && grep -qi "server-side" "$WORK/c_rec.txt" && ok "carapace recommend: native payloads + server-side truth" || bad "recommend missing payload/server truth"
+grep -qi "native payload" "$WORK/c_rec.txt" && grep -qi "server-side" "$WORK/c_rec.txt" && ok "blue-harness recommend: native payloads + server-side truth" || bad "recommend missing payload/server truth"
 $CARA apply "$WORK/app.apk" > "$WORK/c_apply.txt" 2>&1; rc=$?
-[ "$rc" -eq 3 ] && grep -qi "use .carapace harden." "$WORK/c_apply.txt" && ok "carapace apply on a container -> points at harden (rc 3)" || bad "apply did not defer to harden (rc=$rc)"
+[ "$rc" -eq 3 ] && grep -qi "use .blue-harness harden." "$WORK/c_apply.txt" && ok "blue-harness apply on a container -> points at harden (rc 3)" || bad "apply did not defer to harden (rc=$rc)"
 # a non-mobile ZIP is refused cleanly (no traceback)
 printf 'just text' > "$WORK/plain.txt"; ( cd "$WORK" && python3 -c "import zipfile;z=zipfile.ZipFile('notmobile.zip','w');z.write('plain.txt');z.close()" )
 $CARA audit "$WORK/notmobile.zip" > "$WORK/c_bad.txt" 2>&1; rc=$?
@@ -137,7 +137,7 @@ $CARA audit "$WORK/notmobile.zip" > "$WORK/c_bad.txt" 2>&1; rc=$?
 # ---------------------------------- (D) harden dispatch + repack — IPA (Mach-O)
 hdr "(D) harden DISPATCHES + REPACKS an IPA (Mach-O; cross-platform)"
 $CARA harden "$WORK/app.ipa" --out "$WORK/out.ipa" --build-tag slice-r > "$WORK/h_ipa.txt" 2>&1; rc=$?
-[ "$rc" -eq 0 ] && ok "carapace harden ran on an IPA (rc 0)" || { bad "IPA harden failed (rc=$rc)"; cat "$WORK/h_ipa.txt"; }
+[ "$rc" -eq 0 ] && ok "blue-harness harden ran on an IPA (rc 0)" || { bad "IPA harden failed (rc=$rc)"; cat "$WORK/h_ipa.txt"; }
 python3 - "$WORK/out.ipa" <<'PY' && ok "repacked IPA is a valid ZIP" || bad "repacked IPA not a valid zip"
 import zipfile,sys; sys.exit(0 if zipfile.is_zipfile(sys.argv[1]) else 1)
 PY
@@ -160,7 +160,7 @@ PY
 python3 - "$WORK/out.ipa" <<'PY' && ok "no private sidecars (map/ledger) leaked into the container" || bad "a sidecar leaked into the container"
 import zipfile,sys
 z=zipfile.ZipFile(sys.argv[1])
-assert not any(("carapace" in n or "ledger" in n or n.endswith("map.json")) for n in z.namelist()), z.namelist()
+assert not any(("blue-harness" in n or "ledger" in n or n.endswith("map.json")) for n in z.namelist()), z.namelist()
 PY
 
 hdr "(D') honest signing limitation + tier + bypass stated"
@@ -179,9 +179,9 @@ _ELF_READY=0
 if command -v gcc >/dev/null 2>&1 && command -v objcopy >/dev/null 2>&1; then
   RD="$WORK/apk_real"; mkdir -p "$RD/lib/arm64-v8a"
   cat > "$WORK/native.c" <<'CEOF'
-int carapace_demo_table[4] = {11,22,33,44};
-int carapace_demo_check(int x){ return carapace_demo_table[x & 3] + x; }
-const char *carapace_demo_msg(void){ return "LICENSE_OK https://api.example.test/activate"; }
+int bh_demo_table[4] = {11,22,33,44};
+int bh_demo_check(int x){ return bh_demo_table[x & 3] + x; }
+const char *bh_demo_msg(void){ return "LICENSE_OK https://api.example.test/activate"; }
 CEOF
   if gcc -shared -fPIC -o "$RD/lib/arm64-v8a/libnative.so" "$WORK/native.c" 2>"$WORK/gcc.err" \
      && python3 -c "import sys;sys.exit(0 if open(sys.argv[1],'rb').read(4)==b'\x7fELF' else 1)" "$RD/lib/arm64-v8a/libnative.so"; then
@@ -193,7 +193,7 @@ if [ "$_ELF_READY" -eq 1 ]; then
     printf 'dex\n035\000fake' > "$RD/classes.dex"
     mkzip "$RD" "$WORK/real.apk"
     $CARA harden "$WORK/real.apk" --out "$WORK/out.apk" --build-tag slice-r > "$WORK/h_apk.txt" 2>&1; rc=$?
-    [ "$rc" -eq 0 ] && ok "carapace harden ran on an APK (rc 0)" || { bad "APK harden failed (rc=$rc)"; cat "$WORK/h_apk.txt"; }
+    [ "$rc" -eq 0 ] && ok "blue-harness harden ran on an APK (rc 0)" || { bad "APK harden failed (rc=$rc)"; cat "$WORK/h_apk.txt"; }
     python3 - "$WORK/real.apk" "$WORK/out.apk" <<'PY' && ok "APK repack: .so transformed; manifest/dex byte-identical; members preserved" || bad "APK repack wrong"
 import zipfile,sys
 za,zb=zipfile.ZipFile(sys.argv[1]),zipfile.ZipFile(sys.argv[2])
@@ -204,13 +204,13 @@ for n in ("AndroidManifest.xml","classes.dex"):
     assert za.read(n)==zb.read(n), f"{n} changed"
 PY
     # ELF harden emits PRIVATE sidecars (de-obf map + honeytoken ledger) OUTSIDE the apk
-    find "$WORK/out.apk.carapace-private" -type f 2>/dev/null | grep -qi "carapace-map" && \
-    find "$WORK/out.apk.carapace-private" -type f 2>/dev/null | grep -qi "honey-ledger" && \
+    find "$WORK/out.apk.blue-harness-private" -type f 2>/dev/null | grep -qi "blue-harness-map" && \
+    find "$WORK/out.apk.blue-harness-private" -type f 2>/dev/null | grep -qi "honey-ledger" && \
       ok "private map + honeytoken ledger collected OUTSIDE the container" || bad "sidecars not collected outside"
     python3 - "$WORK/out.apk" <<'PY' && ok "no private sidecars leaked into the APK" || bad "sidecar leaked into APK"
 import zipfile,sys
 z=zipfile.ZipFile(sys.argv[1])
-assert not any(("carapace" in n or "ledger" in n) for n in z.namelist()), z.namelist()
+assert not any(("blue-harness" in n or "ledger" in n) for n in z.namelist()), z.namelist()
 PY
     grep -qi "apksigner" "$WORK/h_apk.txt" && ok "Android: names apksigner as the re-sign step" || bad "apksigner re-sign step not named"
 else

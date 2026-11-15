@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Implementation Slice A.
+# blue-harness — VERIFY harness for Implementation Slice A.
 #
 # Proves, on a real sample ELF, the three claims from docs/STATE.md step 3:
 #   (A) the AUDIT flips present<->absent exactly when the guards are added;
@@ -29,15 +29,15 @@ jbool() { python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1]))[sy
 # ---------------------------------------------------------------- build ----
 hdr "BUILD"
 make -C "$SAMPLE_DIR" clean >/dev/null 2>&1
-if make -C "$SAMPLE_DIR" >/tmp/carapace_build.log 2>&1; then
+if make -C "$SAMPLE_DIR" >/tmp/bh_build.log 2>&1; then
     ok "sample_baseline + sample_hardened built"
 else
-    bad "build failed"; cat /tmp/carapace_build.log; exit 1
+    bad "build failed"; cat /tmp/bh_build.log; exit 1
 fi
 BASE="$SAMPLE_DIR/sample_baseline"
 HARD="$SAMPLE_DIR/sample_hardened"
 PROBE="$VERIFY_DIR/ptrace_attach_probe"
-if cc -O2 -o "$PROBE" "$VERIFY_DIR/ptrace_attach_probe.c" 2>>/tmp/carapace_build.log; then
+if cc -O2 -o "$PROBE" "$VERIFY_DIR/ptrace_attach_probe.c" 2>>/tmp/bh_build.log; then
     ok "ptrace_attach_probe built"
 else
     bad "probe build failed"; exit 1

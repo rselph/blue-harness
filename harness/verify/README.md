@@ -56,10 +56,10 @@ preserved (scope = internal symbols only, so dynamic linking stays intact).
 
 ### Slice C — `test_slice_c.sh` (9/9)
 
-Proves the drive-the-harness skill (`../../skill/`): `carapace audit` reports a
-posture; `carapace recommend` yields the next highest-value hardening with a
+Proves the drive-the-harness skill (`../../skill/`): `blue-harness audit` reports a
+posture; `blue-harness recommend` yields the next highest-value hardening with a
 strength tier **and** a named bypass on every item and never overclaims;
-`carapace apply` fires the post-build hardening (app still runs), the
+`blue-harness apply` fires the post-build hardening (app still runs), the
 recommendation then advances (identity-transform → coredump-guard) and the score
 drops; and a build-time hardening is **honestly refused** rather than faked onto
 an already-built binary.
@@ -82,7 +82,7 @@ on-disk code):
 
 ### Slice E — `test_slice_e.sh` (7/7)
 
-Covers the front-door `report` one-shot (`skill/carapace.py report`): it exits 0,
+Covers the front-door `report` one-shot (`skill/blue_harness.py report`): it exits 0,
 renders the full audit **and** the ordered hardening plan in one call, every plan
 item carries a strength tier + a named bypass, the server-side-relocation Strong
 tier is surfaced, and it never overclaims ("unbreakable" appears only as a

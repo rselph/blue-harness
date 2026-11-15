@@ -1,6 +1,6 @@
-/* Carapace anti-Frida detector — implementation (Linux, libc only). */
+/* blue-harness anti-Frida detector — implementation (Linux, libc only). */
 #define _GNU_SOURCE
-#include "carapace_antifrida.h"
+#include "bh_antifrida.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -72,18 +72,18 @@ static int scan_port(void) {
     return r == 0;          /* connected => a listener is there */
 }
 
-int carapace_antifrida_scan(char *detail, size_t detail_len) {
+int bh_antifrida_scan(char *detail, size_t detail_len) {
     int flags = 0;
-    if (scan_maps())    flags |= CARAPACE_FRIDA_MAPS;
-    if (scan_threads()) flags |= CARAPACE_FRIDA_THREADS;
-    if (scan_port())    flags |= CARAPACE_FRIDA_PORT;
+    if (scan_maps())    flags |= BH_FRIDA_MAPS;
+    if (scan_threads()) flags |= BH_FRIDA_THREADS;
+    if (scan_port())    flags |= BH_FRIDA_PORT;
 
     if (detail && detail_len) {
         snprintf(detail, detail_len, "%s%s%s%s",
                  flags ? "frida:" : "clean",
-                 (flags & CARAPACE_FRIDA_MAPS)    ? " maps" : "",
-                 (flags & CARAPACE_FRIDA_THREADS) ? " threads" : "",
-                 (flags & CARAPACE_FRIDA_PORT)    ? " port27042" : "");
+                 (flags & BH_FRIDA_MAPS)    ? " maps" : "",
+                 (flags & BH_FRIDA_THREADS) ? " threads" : "",
+                 (flags & BH_FRIDA_PORT)    ? " port27042" : "");
     }
     return flags;
 }

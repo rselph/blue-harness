@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — run every verify slice and print ONE posture summary.
+# blue-harness — run every verify slice and print ONE posture summary.
 # This is the "prove it" half of the pitch: one command, every countermeasure
 # demonstrated firing, honest pass/fail. `make verify` from the repo root calls it.
 #
@@ -20,7 +20,7 @@ declare -A WHAT=(
     [i]="analysis-surface exhaustion: inventory ballooned, runtime byte-identical, exports intact"
     [j]="honeytokens/canaries: plausible decoy secrets poison + attribute, provably inert"
     [k]="empirical CrackMe + honest scorer plumbing (effectiveness run is operator-VM-gated)"
-    [l]="one-command 'carapace harden' applies every post-build pass; honest skill install"
+    [l]="one-command 'blue-harness harden' applies every post-build pass; honest skill install"
     [m]="skill routes audit/report by magic byte (ELF/PE); apply/harden dispatch PE, refuse unknown"
     [n]="Mach-O exposure audit (third format): symtab/cstring/dylibs, soft→hard flip, fat parsed"
     [o]="Mach-O local-symbol strip (first Mach-O harden): locals gone, externals kept, surgical"
@@ -32,7 +32,7 @@ declare -A WHAT=(
 ORDER="a b c d e f g h i j k l m n o p q r s"
 
 echo "=================================================================="
-echo "  Carapace — measure it, harden it, PROVE it"
+echo "  blue-harness — measure it, harden it, PROVE it"
 echo "  Running every verify slice against real sample binaries..."
 echo "=================================================================="
 

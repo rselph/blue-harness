@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice L (one-command `harden` + skill `install`).
+# blue-harness — VERIFY harness for Slice L (one-command `harden` + skill `install`).
 #
 # Proves:
-#   (A) `carapace harden` applies EVERY applicable post-build pass in one command
+#   (A) `blue-harness harden` applies EVERY applicable post-build pass in one command
 #       (identity decoy -> exhaust -> honeytokens), emitting the hardened binary +
 #       the PRIVATE key artifacts;
 #   (B) it is NON-BREAKING: the hardened binary runs with byte-identical output;
 #   (C) it is HONEST: it lists the build-time guards as "needs a rebuild" (never
 #       fakes them), surfaces the server-side Strong tier, puts a tier + bypass on
 #       every applied item, and never overclaims;
-#   (D) `carapace install` symlinks the skill into .claude/skills/carapace and
+#   (D) `blue-harness install` symlinks the skill into .claude/skills/blue-harness and
 #       refuses to clobber a real directory.
 #
 # Exit 0 = all hard assertions passed.
@@ -18,7 +18,7 @@ cd "$(dirname "$0")"
 REPO="$(cd ../.. && pwd)"
 SAMPLE_DIR="$(cd ../sample && pwd)"
 AUDIT="$(cd ../audit && pwd)/elf_exposure_audit.py"
-CARA="python3 $REPO/skill/carapace.py"
+CARA="python3 $REPO/skill/blue_harness.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -32,13 +32,13 @@ hdr "BUILD + harden (one command)"
 make -C "$SAMPLE_DIR" sample_dev >/dev/null 2>&1 && ok "sample_dev built" || { bad "build failed"; exit 1; }
 APP="$WORK/app"; cp "$SAMPLE_DIR/sample_dev" "$APP"
 $CARA harden "$APP" --build-tag "slice-L" > "$WORK/harden.txt" 2>&1 \
-    && ok "carapace harden exits 0" || { bad "harden failed"; cat "$WORK/harden.txt"; exit 1; }
+    && ok "blue-harness harden exits 0" || { bad "harden failed"; cat "$WORK/harden.txt"; exit 1; }
 HARD="$APP.hardened"
 [ -f "$HARD" ] && ok "hardened binary produced (<bin>.hardened)" || bad "no hardened binary"
 
 hdr "(A) every applicable POST-BUILD pass applied"
 grep -q "identity transform" "$WORK/harden.txt" && ok "identity transform applied" || bad "identity transform missing"
-[ -f "$APP.hardened.carapace-map.json" ] && ok "private symbol map written" || bad "no private map"
+[ -f "$APP.hardened.blue-harness-map.json" ] && ok "private symbol map written" || bad "no private map"
 python3 "$AUDIT" --json "$HARD" > "$WORK/a.json"
 [ "$(jget "$WORK/a.json" exhaustion_present)" = "True" ] && ok "exhaustion present in hardened binary" || bad "exhaustion missing"
 [ "$(jget "$WORK/a.json" honeytokens_present)" = "True" ] && ok "honeytokens present in hardened binary" || bad "honeytokens missing"
@@ -64,10 +64,10 @@ else
 fi
 
 hdr "(D) skill install"
-$CARA install --dir "$WORK/skills" >/dev/null 2>&1 && [ -f "$WORK/skills/carapace/SKILL.md" ] \
+$CARA install --dir "$WORK/skills" >/dev/null 2>&1 && [ -f "$WORK/skills/blue-harness/SKILL.md" ] \
     && ok "install symlinks the skill (SKILL.md reachable)" || bad "install did not create a working skill link"
 $CARA install --dir "$WORK/skills" >/dev/null 2>&1 && ok "install is idempotent (re-run OK)" || bad "re-install failed"
-rm -f "$WORK/skills/carapace"; mkdir -p "$WORK/skills/carapace"; : > "$WORK/skills/carapace/real"
+rm -f "$WORK/skills/blue-harness"; mkdir -p "$WORK/skills/blue-harness"; : > "$WORK/skills/blue-harness/real"
 $CARA install --dir "$WORK/skills" >/dev/null 2>&1; [ "$?" -eq 2 ] && ok "install refuses to clobber a real directory (rc=2)" || bad "install clobbered or wrong rc"
 
 hdr "SUMMARY"

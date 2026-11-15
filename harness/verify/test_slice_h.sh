@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Carapace — VERIFY harness for Slice H (CI that enforces `make verify`).
+# blue-harness — VERIFY harness for Slice H (CI that enforces `make verify`).
 # Slice H ships no new countermeasure; it wires the existing 99/99 gate into
 # GitHub Actions so a regression in any slice fails visibly. This test is the
 # config lint that keeps that wiring honest: it asserts the workflow still runs

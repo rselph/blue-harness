@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Carapace — Mach-O LOCAL-symbol strip (Slice O): the first Mach-O harden.
+# blue-harness — Mach-O LOCAL-symbol strip (Slice O): the first Mach-O harden.
 #
 # WHAT THIS IS
 #   A post-build pass that removes the LOCAL (static / internal) symbols from a
@@ -165,16 +165,16 @@ def strip_locals(src, dst):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Carapace Mach-O local-symbol strip (strip -x equivalent; COST, not prevention).")
+        description="blue-harness Mach-O local-symbol strip (strip -x equivalent; COST, not prevention).")
     ap.add_argument("--in", dest="src", required=True)
     ap.add_argument("--out", dest="dst", required=True)
     a = ap.parse_args(argv)
     try:
         info = strip_locals(a.src, a.dst)
     except (StripError, FileNotFoundError, IsADirectoryError) as e:
-        print(f"carapace-macho-strip error: {e}", file=sys.stderr)
+        print(f"blue-harness-macho-strip error: {e}", file=sys.stderr)
         return 2
-    print(f"[carapace-macho-strip] {a.src} -> {a.dst}")
+    print(f"[blue-harness-macho-strip] {a.src} -> {a.dst}")
     print(f"  removed {info['removed_locals']} LOCAL symbol(s); kept "
           f"{info['externals']} external + {info['undefined']} undefined (dyld needs these)")
     print("  surgical: only the local nlist entries + their name strings removed; all load")

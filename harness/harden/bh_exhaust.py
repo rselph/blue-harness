@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-# Carapace — analysis-surface EXHAUSTION (Slice I).
+# blue-harness — analysis-surface EXHAUSTION (Slice I).
 #
 # WHAT THIS IS
 #   A build-time pass over the COMPILED ELF that inflates the volume of material
 #   an AI-RE agent must ingest and reason over, WITHOUT changing what the program
 #   does. It absorbs the "Exhaust" axis of the commodity AI-RE defender space
 #   (peers push artifacts past an agent's documented inventory / context budgets)
-#   into Carapace's native lane — and, unlike a size-diff "verify", we prove the
+#   into blue-harness's native lane — and, unlike a size-diff "verify", we prove the
 #   runtime is byte-identical and the dynamic surface is untouched
 #   (harness/verify/test_slice_i.sh).
 #
 # TWO NON-BREAKING LEVERS (binutils only; both verified in-repo):
-#   1. Decoy NON-ALLOCATED sections (.carapace_exh_<i>): SHT_PROGBITS with the
+#   1. Decoy NON-ALLOCATED sections (.bh_exh_<i>): SHT_PROGBITS with the
 #      SHF_ALLOC flag CLEAR. The loader never maps a non-alloc section, so there
 #      is zero runtime cost and zero behaviour change — but a static tool or agent
 #      that inventories and dumps every section must read all of it.
-#   2. Synthetic LOCAL FUNC symbols (carapace_exh_fn_<i>) added to .symtab only
+#   2. Synthetic LOCAL FUNC symbols (bh_exh_fn_<i>) added to .symtab only
 #      (never .dynsym). They inflate the function inventory an agent enumerates
 #      and budgets per-symbol analysis against. LOCAL + symtab-only => dynamic
 #      linking and exports are unaffected.
@@ -49,8 +49,8 @@ import subprocess
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "audit"))
 from elf_exposure_audit import ELF  # noqa: E402
 
-SEC_PREFIX = ".carapace_exh_"
-SYM_PREFIX = "carapace_exh_fn_"
+SEC_PREFIX = ".bh_exh_"
+SYM_PREFIX = "bh_exh_fn_"
 
 
 def _run(cmd):
@@ -73,7 +73,7 @@ def exhaust(src, dst, n_sections, section_size, n_symbols, objcopy="objcopy"):
     shutil.copy2(src, dst)      # copy2 preserves mode (keep the +x bit)
 
     # --- lever 1: decoy non-alloc sections, all in one objcopy call ----------
-    tmpdir = tempfile.mkdtemp(prefix="carapace_exh_")
+    tmpdir = tempfile.mkdtemp(prefix="bh_exh_")
     added_sections = 0
     decoy_bytes = 0
     try:
@@ -120,7 +120,7 @@ def exhaust(src, dst, n_sections, section_size, n_symbols, objcopy="objcopy"):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Carapace analysis-surface exhaustion (non-breaking; COST not prevention).")
+        description="blue-harness analysis-surface exhaustion (non-breaking; COST not prevention).")
     ap.add_argument("src", help="input ELF (the clean compiled binary)")
     ap.add_argument("dst", help="output ELF (the exhausted, shippable binary)")
     ap.add_argument("--sections", type=int, default=4,
@@ -136,7 +136,7 @@ def main(argv=None):
         ap.error(f"input not found: {args.src}")
     info = exhaust(args.src, args.dst, args.sections, args.section_size,
                    args.symbols, args.objcopy)
-    print(f"[carapace-exhaust] {args.src} -> {args.dst}")
+    print(f"[blue-harness-exhaust] {args.src} -> {args.dst}")
     print(f"  decoy sections ..... {info['sections']}  "
           f"({info['decoy_bytes']} bytes, non-alloc: never mapped at runtime)")
     print(f"  synthetic symbols .. {info['symbols']}  (LOCAL FUNC, .symtab only)")

@@ -8,13 +8,13 @@ recommend → (apply) → re-audit.**
 - `SKILL.md` — the skill definition (frontmatter + how Claude drives the loop,
   including the non-negotiable honesty rules: audit-first, tier + named bypass on
   every recommendation, server-side-truth, never "unbreakable").
-- `carapace.py` — the deterministic driver the skill calls. The policy lives here
+- `blue_harness.py` — the deterministic driver the skill calls. The policy lives here
   (in one place, testable) so the skill's behavior is reproducible, not improvised.
 
 ```
-python3 skill/carapace.py audit     <binary>               # full exposure report
-python3 skill/carapace.py recommend <binary> [--all] [--json]
-python3 skill/carapace.py apply     <binary> [--mode S|M|D] # post-build hardening only
+python3 skill/blue_harness.py audit     <binary>               # full exposure report
+python3 skill/blue_harness.py recommend <binary> [--all] [--json]
+python3 skill/blue_harness.py apply     <binary> [--mode S|M|D] # post-build hardening only
 ```
 
 `recommend` returns the next highest-value hardening with its **strength tier** and
@@ -36,5 +36,5 @@ post-build hardening (app still runs), the recommendation then advances and the
 score drops, and a build-time hardening is honestly refused.
 
 **Install as a Claude Code skill:** copy or symlink this directory to
-`.claude/skills/carapace/` (so `SKILL.md` is discovered). Status: **landed
+`.claude/skills/blue-harness/` (so `SKILL.md` is discovered). Status: **landed
 (Slice C).**
