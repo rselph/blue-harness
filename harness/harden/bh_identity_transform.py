@@ -75,12 +75,58 @@ def build_symbol_map(names, mode, decoy_path):
         for i, n in enumerate(names, 1):
             mapping[n] = f"cp_{i:06d}"
     elif mode == "D":
-        decoys = load_decoys(decoy_path)
-        if len(decoys) < len(names):
-            raise RuntimeError(f"decoy dictionary too small: need {len(names)}, have {len(decoys)}")
+        decoys = _expand_decoys(load_decoys(decoy_path), len(names))
         for n, d in zip(names, decoys):
             mapping[n] = d
     return mapping  # S returns {} (nothing renamed; everything stripped)
+
+
+# Verb/noun stems used to synthesise extra plausible decoy identifiers when the
+# curated dictionary is smaller than the symbol count. Same house style as
+# decoy_dictionary.txt (camelCase, security/plumbing flavour) so a synthesised
+# name is indistinguishable from a curated one in a disassembler.
+_DECOY_VERBS = (
+    "verify", "check", "validate", "derive", "rotate", "unseal", "compute",
+    "refresh", "parse", "load", "decode", "flush", "schedule", "negotiate",
+    "pin", "resolve", "apply", "map", "init", "zero", "guard", "sample",
+    "seed", "normalize", "sanitize", "build", "dispatch", "commit", "replay",
+    "open", "close", "read", "write", "encode", "sign", "wrap", "unwrap",
+    "register", "release", "acquire", "reconcile", "prefetch", "throttle",
+)
+_DECOY_NOUNS = (
+    "Signature", "Grant", "Key", "Secret", "Nonce", "Token", "Header", "Flags",
+    "Envelope", "Queue", "Sync", "Handshake", "Chain", "Manifest", "Digest",
+    "Patch", "Region", "Allocator", "Buffer", "Canary", "Pool", "State",
+    "Input", "Context", "Handler", "Log", "Entry", "Session", "Field", "Record",
+    "Hash", "Blob", "Slot", "Table", "Cursor", "Window", "Frame", "Descriptor",
+)
+
+
+def _expand_decoys(decoys, need):
+    """Return at least `need` unique decoy names: the curated list first, then
+    deterministic verb+noun combinations. Deterministic so a given binary always
+    maps the same way (the private map stays reproducible)."""
+    out = list(dict.fromkeys(decoys))  # de-dup, keep order
+    seen = set(out)
+    if len(out) >= need:
+        return out
+    for noun in _DECOY_NOUNS:
+        for verb in _DECOY_VERBS:
+            cand = verb + noun
+            if cand not in seen:
+                out.append(cand)
+                seen.add(cand)
+                if len(out) >= need:
+                    return out
+    # Last resort for an unusually large binary: numbered suffixes.
+    i = 0
+    while len(out) < need:
+        cand = f"processRecord{i:04d}"
+        if cand not in seen:
+            out.append(cand)
+            seen.add(cand)
+        i += 1
+    return out
 
 
 def patch_strings(elf_path, pairs):

@@ -502,10 +502,15 @@ def analyze(path):
         ("bh_antifrida_scan" in syms)
         or (b"gum-js-loop" in blob_lower) or (b"frida-agent" in blob_lower)
     )
-    # Build-time string encryption: the enc-mode marker symbol (a name, not a
-    # plaintext tell). The loader alone isn't enough — a plaintext build also
-    # links it; only the encrypted build carries this marker.
-    string_encryption_present = "bh_strings_enc" in syms
+    # Build-time string encryption: the enc-mode marker symbol (a name), or the
+    # fixed byte tag the enc build plants in .rodata. The tag survives a symbol
+    # rename/strip (the identity transform renames bh_strings_enc away), so this
+    # matches how the integrity and anti-Frida signals are detected by a surviving
+    # byte tell. The loader alone isn't enough — a plaintext build also links it;
+    # only the encrypted build carries either marker.
+    string_encryption_present = (
+        ("bh_strings_enc" in syms) or (b"BH-STRENC-v1" in blob_lower)
+    )
 
     # Build-time analysis-surface EXHAUSTION (Slice I). Our decoy non-alloc
     # sections (SHF_ALLOC clear -> never mapped at runtime) and synthetic LOCAL
@@ -564,6 +569,7 @@ def analyze(path):
         "informativeness": informativeness(elf, str_target),
     }
     signals["score"], signals["tier"], signals["recommendation"] = score(signals)
+    signals["coverage"] = coverage(signals)
     return signals
 
 
@@ -636,6 +642,49 @@ def recommend(s):
             "and trust decisions — the only *Strong* tier (CLAUDE.md §3).")
 
 
+# ---- defense coverage (a second number: how many layers are in place) -----
+# The exposure score measures FREE INTEL an agent reads (symbols, strings,
+# debug info, the load-time flags). It deliberately does NOT credit the active
+# countermeasures, because "present" is not "unbreakable" — a decoy pass can be
+# filtered, a guard can be hooked. Coverage reports those layers separately and
+# honestly: a count of which countermeasures are in place, each mapped to the
+# attacker step it raises cost against. Coverage is breadth, NOT strength.
+def coverage(s):
+    h = s["hardening"]
+    link_hardened = (h["relro"] == "full" and not h["nx"].startswith("DISABLED")
+                     and not h["pie"].startswith("No-PIE") and h["canary"])
+    layers = [
+        ("debug info stripped",      not s["debug_info_present"], False,
+         "blunts free DWARF source-level reconstruction"),
+        ("string encryption",        s["string_encryption_present"], False,
+         "defeats list_strings harvesting of secrets/URLs"),
+        ("core-dump suppression",    s["coredump_guard_present"], False,
+         "denies crash-dump memory inspection"),
+        ("anti-ptrace / anti-debug", s["antiptrace_guard_present"], False,
+         "raises cost of GDB / ptrace attach"),
+        ("anti-Frida detector",      s["antifrida_guard_present"], False,
+         "raises cost of Frida runtime instrumentation"),
+        ("code-integrity / attest",  s["integrity_guard_present"], False,
+         "a silent patch fails server attestation (understanding != working tamper)"),
+        ("analysis-surface exhaustion", s["exhaustion_present"], True,
+         "burns an LLM agent's ingest / context budget"),
+        ("honeytokens / canaries",   s["honeytokens_present"], True,
+         "detects and attributes an AI-generated crack"),
+        ("load-time hardening",      link_hardened, False,
+         "RELRO+NX+PIE+canary raise memory-corruption cost"),
+    ]
+    present = sum(1 for _, p, _, _ in layers if p)
+    ai = [(n, p) for n, p, is_ai, _ in layers if is_ai]
+    return {
+        "present": present,
+        "applicable": len(layers),
+        "ai_present": sum(1 for _, p in ai if p),
+        "ai_total": len(ai),
+        "layers": [{"name": n, "present": p, "ai_layer": is_ai, "counters": c}
+                   for n, p, is_ai, c in layers],
+    }
+
+
 # ---- reporting -----------------------------------------------------------
 def render(s):
     h = s["hardening"]
@@ -645,8 +694,19 @@ def render(s):
     L.append("=" * 68)
     L.append(f"  blue-harness ELF Exposure Audit — {s['file']}  [{s['arch']}]")
     L.append("=" * 68)
-    L.append(f"  EXPOSURE SCORE : {s['score']}/100")
+    L.append(f"  EXPOSURE SCORE : {s['score']}/100   (free intel an agent reads; lower is better)")
     L.append(f"  POSTURE TIER   : {s['tier']}")
+    cov = s["coverage"]
+    L.append(f"  DEFENSE COVERAGE : {cov['present']}/{cov['applicable']} layers in place"
+             f"   (breadth of countermeasures, NOT a strength guarantee)")
+    for ly in cov["layers"]:
+        box = "x" if ly["present"] else " "
+        tag = " [AI-layer]" if ly["ai_layer"] else ""
+        L.append(f"    [{box}] {ly['name']:<26}{tag}  {ly['counters']}")
+    L.append(f"    AI-layer defenses: {cov['ai_present']}/{cov['ai_total']} present "
+             "(exhaustion, honeytokens) — the machine-comprehension front")
+    L.append("    Not counted: server-side relocation of secrets — the only *Strong*")
+    L.append("    tier, which no client-side audit can verify (CLAUDE.md §3).")
     L.append("")
     L.append("  Signals an AI-assisted RE agent (e.g. rea) reads for free:")
     L.append(f"    symbols (.symtab) ...... {yn(s['symbols_present'])}")

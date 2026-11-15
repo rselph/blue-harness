@@ -52,6 +52,19 @@ sample_strings_plain: sample_strings.c $(STRLOADER) $(HARDEN)/bh_strings.h secre
 	$(CC) -O1 -g -Wall -Wextra $(INCLUDE) -I. -DBH_GEN_HEADER='"bh_strings_gen_plain.h"' \
 		-o $@ sample_strings.c $(STRLOADER)
 
+# Every build-time lever in one binary (the full coverage story for the demo and
+# Slice U): guards + anti-Frida + integrity/attest + encrypted strings, built
+# -O2 so the link hardening (RELRO/NX/PIE/canary) is on too. Defines >36 of its
+# own functions so the identity transform's decoy pass exercises synthesised names.
+sample_fortified_base: sample_full.c secret_strings.json \
+                       $(HARDEN)/bh_guards.c $(HARDEN)/bh_antifrida.c \
+                       $(HARDEN)/bh_integrity.c $(STRLOADER) $(HARDEN)/bh_strings.h
+	python3 $(GEN) gen --manifest secret_strings.json --mode enc --out bh_strings_gen_enc.h
+	$(CC) -O2 -g -Wall -Wextra $(INCLUDE) -I. -DBH_GEN_HEADER='"bh_strings_gen_enc.h"' \
+		-o $@ sample_full.c $(HARDEN)/bh_guards.c $(HARDEN)/bh_antifrida.c \
+		$(HARDEN)/bh_integrity.c $(STRLOADER) -lpthread -ldl
+
 clean:
 	rm -f sample_baseline sample_hardened sample_dev sample_release_* sample_attest sample_attest_* \
-	      sample_strings_enc sample_strings_plain bh_strings_gen_*.h
+	      sample_strings_enc sample_strings_plain sample_fortified_base sample_fortified_base.* \
+	      bh_strings_gen_*.h

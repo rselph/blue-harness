@@ -28,8 +28,9 @@ declare -A WHAT=(
     [q]="Mach-O harden depth: decoy non-mapped segment (vmsize=0 LC) + honeytokens, surgical"
     [r]="mobile-container reach: unpack APK/IPA, audit + harden native payloads, repack (honest re-sign)"
     [s]="Slice-K re-run packaged: one-command scored run + tool-call shim, proven with a MOCK attacker"
+    [u]="defense COVERAGE 2nd score (breadth, AI-layer defenses) + 2 rename regressions locked"
 )
-ORDER="a b c d e f g h i j k l m n o p q r s"
+ORDER="a b c d e f g h i j k l m n o p q r s u"
 
 echo "=================================================================="
 echo "  blue-harness — measure it, harden it, PROVE it"

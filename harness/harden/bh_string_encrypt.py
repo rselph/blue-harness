@@ -84,8 +84,14 @@ def generate(manifest, mode, key):
     lines.append(",\n".join(tbl))
     lines.append("};")
     if mode == "enc":
-        # audit marker symbol (a name, not a plaintext tell) => "strings encrypted?"
+        # audit marker symbol (a name) => "strings encrypted?"
         lines.append("const unsigned char bh_strings_enc = 1;")
+        # ...plus a fixed byte tag in .rodata, so the signal survives a symbol
+        # rename/strip (the identity transform renames bh_strings_enc away). This
+        # mirrors how integrity (SHA-256 constants) and anti-Frida (signature
+        # strings) are detected by a surviving byte tell, not a symbol name. The
+        # tag names only the harness, never any app secret.
+        lines.append('const char bh_strenc_tag[] = "BH-STRENC-v1";')
     lines.append("#endif /* BH_STRINGS_IMPL */")
     lines.append("#endif /* BH_STRINGS_GEN_H */")
     return "\n".join(lines) + "\n"
