@@ -1,4 +1,4 @@
-# Carapace CI — the "prove it" guarantee, enforced on every change.
+# blue-harness CI — the "prove it" guarantee, enforced on every change.
 #
 # Runs `make verify` (all slices, audit -> harden -> verify) on every push and
 # every pull request. A regression in any slice turns the badge red and fails
@@ -34,7 +34,7 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Record the toolchain Carapace is being proven against
+      - name: Record the toolchain blue-harness is being proven against
         run: |
           set -eux
           cc --version | head -1
