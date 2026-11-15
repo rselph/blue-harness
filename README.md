@@ -1,5 +1,6 @@
 <h1 align="center">🛡️ Carapace</h1>
 <p align="center"><em>Make your own app expensive to reverse — measure it, harden it, prove it.</em></p>
+<p align="center"><strong>Anyone can now reverse-engineer a shipped app by typing one sentence to an AI agent; Carapace makes that expensive, measures how expensive, and proves each defense actually fires.</strong></p>
 
 <p align="center">
   A build-time <strong>anti-reverse-engineering hardening &amp; audit harness</strong>
@@ -10,19 +11,17 @@
   <a href="https://github.com/seifheakal/blue_team/actions/workflows/verify.yml"><img src="https://github.com/seifheakal/blue_team/actions/workflows/verify.yml/badge.svg" alt="verify status"></a>
 </p>
 
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL%20v3-blue" alt="License: AGPL v3"></a>
+  <a href="COMMERCIAL-LICENSE.md"><img src="https://img.shields.io/badge/commercial%20license-available-orange" alt="commercial license available"></a>
+</p>
+
 ---
 
-> [!CAUTION]
-> ### 🔴 Help wanted — test Carapace against a bigger model
-> Our before/after below is **one run (N=1)** by a small, 4-bit-quantised **7B**
-> model on a laptop (RTX 3070, 8 GB VRAM / 16 GB RAM) — a **floor, not a ceiling**.
-> If you have the hardware, point a **larger local or a frontier model** at the same
-> two builds and **send the scored result back as a PR**. A stronger attacker is the
-> only way to test the layers our small run never reached. It is now **one command** —
-> `make slice-k-run MODEL=<your-model>` builds the sealed pair, drives the agent, and
-> prints the honest before/after (and we fixed the tool-call friction that blocked
-> commodity local models). Five-minute guide:
-> [**docs/HOW-WE-TESTED.md**](docs/HOW-WE-TESTED.md).
+<!-- TODO: replace with a real 8-second demo GIF: AI agent cracks the plain build, then fails on the hardened build -->
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Carapace demo: an AI agent cracks the unhardened build, then fails on the hardened one">
+</p>
 
 ## Quickstart
 
@@ -40,6 +39,18 @@ make harden BIN=path/to/your/binary   # apply every post-build hardening (honest
 ```
 
 No external dependencies: a C toolchain, `make`, and Python 3.
+
+> [!CAUTION]
+> ### 🔴 Help wanted — test Carapace against a bigger model
+> Our before/after below is **one run (N=1)** by a small, 4-bit-quantised **7B**
+> model on a laptop (RTX 3070, 8 GB VRAM / 16 GB RAM) — a **floor, not a ceiling**.
+> If you have the hardware, point a **larger local or a frontier model** at the same
+> two builds and **send the scored result back as a PR**. A stronger attacker is the
+> only way to test the layers our small run never reached. It is now **one command** —
+> `make slice-k-run MODEL=<your-model>` builds the sealed pair, drives the agent, and
+> prints the honest before/after (and we fixed the tool-call friction that blocked
+> commodity local models). Five-minute guide:
+> [**docs/HOW-WE-TESTED.md**](docs/HOW-WE-TESTED.md).
 
 ## What it is
 
@@ -179,4 +190,9 @@ Roadmap in [docs/STATE.md](docs/STATE.md).
 
 ## License
 
-TBD.
+Carapace is open source under the [GNU AGPL-3.0](LICENSE) and is free for
+everyone, including businesses, as long as you comply with the AGPL. To use it
+in a closed-source product or a proprietary service without AGPL's copyleft
+obligations, a paid commercial license is available; see
+[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md). Evaluation and testing are free
+for everyone.
