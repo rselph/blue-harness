@@ -61,3 +61,6 @@ harness/sample/*.carapace-private/
 # Slice K CrackMe — build outputs (binaries, SEAL, PRIVATE ledger) + the real flag
 harness/crackme/build/
 harness/crackme/secret.local.txt
+
+# private launch/marketing plan (not shipped)
+LAUNCH.md
