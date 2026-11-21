@@ -31,6 +31,7 @@ import json
 import shutil
 import argparse
 import tempfile
+import subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -67,16 +68,92 @@ def _stage_arena(binary, arena_root=None):
     return arena, staged
 
 
+# The flags every attacker container is started with. No network at all: the
+# loop + model stay on the host, only the agent's shell commands run in here.
+DOCKER_RUN_FLAGS = (
+    "--network", "none",
+    "--cap-drop", "ALL",
+    "--security-opt", "no-new-privileges",
+    "--read-only",
+    "--tmpfs", "/arena:rw,exec,uid=10001,gid=10001,mode=0700",
+    "--tmpfs", "/tmp:rw,exec,mode=1777",
+    "--pids-limit", "256",
+    "--memory", "2g",
+)
+
+
+class DockerArena:
+    """One fresh, network-less container holding exactly ONE binary.
+
+    Lifecycle: run (detached, `sleep infinity`) -> verify NetworkMode is `none`
+    (refuse otherwise) -> stream the binary in over `docker exec` stdin -> hand
+    back a DockerExecutor -> `docker rm -f` on exit, always. The binary is
+    streamed rather than `docker cp`'d because cp cannot write into a tmpfs
+    mount of a --read-only container."""
+
+    def __init__(self, image, binary, variant, docker="docker"):
+        self.image, self.binary, self.docker = image, binary, docker
+        self.name = f"bh-arena-{variant}-{os.urandom(4).hex()}"
+        self.staged = "/arena/" + os.path.basename(binary)
+        self.started = False
+
+    def _docker(self, *argv, **kw):
+        return subprocess.run([self.docker, *argv], capture_output=True,
+                              text=True, check=False, **kw)
+
+    def __enter__(self):
+        r = self._docker("run", "-d", "--rm", "--name", self.name,
+                         *DOCKER_RUN_FLAGS, self.image, "sleep", "infinity")
+        if r.returncode != 0:
+            raise SystemExit(f"docker run failed: {r.stderr.strip()}")
+        self.started = True
+        try:
+            mode = self._docker("inspect", "-f", "{{.HostConfig.NetworkMode}}",
+                                self.name).stdout.strip()
+            if mode != "none":
+                raise SystemExit(f"refusing to run: {self.name} NetworkMode="
+                                 f"{mode!r}, expected 'none'")
+            with open(self.binary, "rb") as f:
+                r = subprocess.run(
+                    [self.docker, "exec", "-i", "-u", "agent", self.name, "sh", "-c",
+                     f"cat > {self.staged} && chmod 755 {self.staged}"],
+                    stdin=f, capture_output=True, check=False)
+            if r.returncode != 0:
+                raise SystemExit(f"could not stage binary into {self.name}: "
+                                 f"{r.stderr.decode(errors='replace').strip()}")
+        except BaseException:
+            self.__exit__(None, None, None)
+            raise
+        return aa.DockerExecutor(self.name, docker=self.docker)
+
+    def __exit__(self, *exc):
+        if self.started:
+            self._docker("rm", "-f", self.name)
+            self.started = False
+        return False
+
+
 def _run_variant(args, variant, binary, out_dir):
-    arena, staged = _stage_arena(binary, args.arena_root)
-    try:
-        backend = _make_backend(args, staged)
-        rec = aa.run_agent(backend, staged, cwd=arena, env=aa.agent_env(arena),
-                           max_steps=args.max_steps, step_timeout=args.step_timeout)
-    finally:
-        shutil.rmtree(arena, ignore_errors=True)
+    if args.sandbox == "docker":
+        box = DockerArena(args.image, binary, variant)
+        with box as executor:
+            backend = _make_backend(args, box.staged)
+            rec = aa.run_agent(backend, box.staged, executor=executor,
+                               max_steps=args.max_steps,
+                               step_timeout=args.step_timeout)
+        arena = f"docker:{box.name}"
+    else:
+        arena, staged = _stage_arena(binary, args.arena_root)
+        try:
+            backend = _make_backend(args, staged)
+            rec = aa.run_agent(backend, staged, cwd=arena, env=aa.agent_env(arena),
+                               max_steps=args.max_steps,
+                               step_timeout=args.step_timeout)
+        finally:
+            shutil.rmtree(arena, ignore_errors=True)
     rec["variant"] = variant
     rec["arena"] = arena
+    rec["sandbox"] = args.sandbox
 
     # Persist the transcript to a file so the scorer can scan it for honeytokens.
     tpath = os.path.join(out_dir, f"transcript_{variant}.txt")
@@ -155,9 +232,15 @@ def _dry_run(args):
     print(f"  out dir ........ {args.out_dir}")
     print(f"  runs ........... {args.runs}"
           + (" (each in out-dir/run-NN/, fresh agent context)" if args.runs > 1 else ""))
-    print("  isolation ...... each variant runs in a fresh private arena holding only")
-    print("                   its binary; the agent shell gets a scrubbed env (no")
-    print("                   BH_CRACKME_SECRET); seal + ledger stay outside the arena.")
+    if args.sandbox == "docker":
+        print(f"  sandbox ........ docker (image {args.image}); one fresh container per")
+        print("                   variant: " + " ".join(DOCKER_RUN_FLAGS[:4]) + " ...")
+        print("                   loop + model stay on the HOST; only the agent's shell")
+        print("                   commands run in the container (docker exec).")
+    else:
+        print("  isolation ...... each variant runs in a fresh private arena holding only")
+        print("                   its binary; the agent shell gets a scrubbed env (no")
+        print("                   BH_CRACKME_SECRET); seal + ledger stay outside the arena.")
     print("  " + _GATING)
     print("=" * 66)
     return 0
@@ -179,6 +262,11 @@ def main(argv=None):
     ap.add_argument("--step-timeout", dest="step_timeout", type=int, default=60)
     ap.add_argument("--runs", type=int, default=1,
                     help="repeat the full before/after N times (out-dir/run-NN/)")
+    ap.add_argument("--sandbox", choices=("local", "docker"), default="local",
+                    help="where the agent's shell commands run: a local private "
+                         "arena dir, or a --network none container (docker)")
+    ap.add_argument("--image", default="blue-harness-arena",
+                    help="arena image for --sandbox docker")
     ap.add_argument("--arena-root", dest="arena_root", default=None,
                     help="where per-variant arenas are created (default: system temp)")
     ap.add_argument("--dry-run", action="store_true",
