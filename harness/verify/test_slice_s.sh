@@ -23,7 +23,13 @@
 #         allowlisted env) and starts in a private arena holding ONLY its binary —
 #         SEAL.json and the private honey-ledger are not reachable from its cwd;
 #     (G) REPEATS: --runs N writes each before/after to its own run-NN/ dir (no
-#         overwrite) plus a counts-only summary.json.
+#         overwrite) plus a counts-only summary.json;
+#     (H) DOCKER SANDBOX: with a fake `docker` (always) the arena container is
+#         started --network none / --cap-drop ALL / --read-only, refused unless
+#         NetworkMode is none, gets ONLY the binary, runs commands as `agent`
+#         under an in-container timeout, and is always removed; with a real Docker
+#         daemon (opt-in: BH_TEST_DOCKER=1 — SKIPs otherwise) the mock run passes end-to-end and the
+#         arena provably has no network.
 #
 #   It does NOT produce an effectiveness number — that needs the operator's isolated
 #   VM + chosen model + hardware (same gating as the Slice K VM note). We never
@@ -282,6 +288,152 @@ else
     skip "(G) --runs 2 — build-gated"; skip "(G) run-01 — build-gated"
     skip "(G) run-02 — build-gated"; skip "(G) summary — build-gated"
     skip "(G) summary counts — build-gated"; skip "(G) no flag leak — build-gated"
+fi
+
+# --------------------------------------------------------------------------- #
+hdr "(H) DOCKER SANDBOX — fake docker (always) + real daemon (host only)"
+FAKEBIN="$WORK/fakebin"; mkdir -p "$FAKEBIN"
+cat > "$FAKEBIN/docker" <<'FAKE'
+#!/usr/bin/env python3
+# Records argv (one JSON line per call); emulates just enough of docker.
+import json, os, subprocess, sys
+a = sys.argv[1:]
+log = os.environ["FAKE_DOCKER_LOG"]
+rec = {"argv": a}
+if a[:1] == ["exec"] and "cat >" in a[-1]:
+    rec["stdin_len"] = len(sys.stdin.buffer.read())
+with open(log, "a") as f:
+    f.write(json.dumps(rec) + "\n")
+if a[:1] == ["run"]:
+    print("fakecontainerid")
+elif a[:1] == ["inspect"]:
+    print(os.environ.get("FAKE_NETMODE", "none"))
+elif a[:1] == ["exec"] and "timeout" in a:
+    # run the agent's command locally (no real container in the fake)
+    sys.exit(subprocess.run(["sh", "-c", a[-1]]).returncode)
+FAKE
+chmod +x "$FAKEBIN/docker"
+cat > "$WORK/docker_test.py" <<'PYEOF'
+import json, os, sys
+sys.path.insert(0, os.environ["MEASURE"])
+import attacker_agent as aa
+import slice_k_run as skr
+
+LOG = os.environ["FAKE_DOCKER_LOG"]
+def calls():
+    try:
+        return [json.loads(l) for l in open(LOG)]
+    except FileNotFoundError:
+        return []
+def reset():
+    open(LOG, "w").close()
+def case(desc, cond):
+    print(("PASS " if cond else "FAIL ") + desc)
+
+d = os.path.join(os.environ["WORK"], "dbuild"); os.makedirs(d)
+binp = os.path.join(d, "crackme_hardened")
+open(binp, "wb").write(b"\x7fELF" + b"x" * 60)
+for n in ("SEAL.json", "crackme_hardened.honey-ledger.json"):
+    open(os.path.join(d, n), "w").write("SECRET-STUFF")
+
+class Probe:
+    grade = "mock"
+    def __init__(self): self.n = 0
+    def chat(self, messages, tools=None):
+        self.n += 1
+        if self.n == 1:
+            return {"content": '{"name":"shell","arguments":{"command":"echo hands-ran"}}',
+                    "tool_calls": None, "usage": None}
+        return {"content": "FLAG=none", "tool_calls": None, "usage": None}
+
+reset()
+box = skr.DockerArena("blue-harness-arena", binp, "hardened")
+with box as ex:
+    rec = aa.run_agent(Probe(), box.staged, executor=ex, max_steps=3)
+c = calls()
+run = next(x["argv"] for x in c if x["argv"][0] == "run")
+def has(seq, *pair):
+    return any(seq[i:i+len(pair)] == list(pair) for i in range(len(seq)))
+case("docker run: --network none", has(run, "--network", "none"))
+case("docker run: --cap-drop ALL", has(run, "--cap-drop", "ALL"))
+case("docker run: --read-only + no-new-privileges",
+     "--read-only" in run and has(run, "--security-opt", "no-new-privileges"))
+case("NetworkMode checked via docker inspect before use",
+     any(x["argv"][0] == "inspect" for x in c))
+stage = [x for x in c if "stdin_len" in x]
+case("exactly ONE file staged in, and it is the binary",
+     len(stage) == 1 and stage[0]["stdin_len"] == os.path.getsize(binp)
+     and "/arena/crackme_hardened" in stage[0]["argv"][-1])
+allargs = " ".join(" ".join(x["argv"]) for x in c)
+case("seal + honey-ledger never passed to docker",
+     "SEAL.json" not in allargs and "honey-ledger" not in allargs)
+ex_calls = [x["argv"] for x in c if x["argv"][0] == "exec" and "timeout" in x["argv"]]
+case("agent command runs as `agent` under in-container `timeout -s KILL`",
+     bool(ex_calls) and has(ex_calls[0], "-u", "agent") and has(ex_calls[0], "timeout", "-s", "KILL"))
+case("agent saw its command's output via docker exec", "hands-ran" in rec["transcript"])
+case("container removed (docker rm -f) after the run",
+     any(x["argv"][:2] == ["rm", "-f"] for x in c))
+
+reset()
+try:
+    with skr.DockerArena("blue-harness-arena", binp, "baseline") as ex:
+        raise RuntimeError("agent loop blew up")
+except RuntimeError:
+    pass
+case("container removed even when the agent loop raises",
+     any(x["argv"][:2] == ["rm", "-f"] for x in calls()))
+
+reset()
+os.environ["FAKE_NETMODE"] = "bridge"
+refused = False
+try:
+    with skr.DockerArena("blue-harness-arena", binp, "baseline"):
+        pass
+except SystemExit as e:
+    refused = "NetworkMode" in str(e)
+c = calls()
+case("REFUSES a container whose NetworkMode is not none",
+     refused and not any("stdin_len" in x for x in c))
+case("refused container is still removed", any(x["argv"][:2] == ["rm", "-f"] for x in c))
+PYEOF
+PATH="$FAKEBIN:$PATH" FAKE_DOCKER_LOG="$WORK/docker.log" MEASURE="$MEASURE" WORK="$WORK" \
+    "$PY" "$WORK/docker_test.py" > "$WORK/docker.out" 2>&1 || true
+if grep -q Traceback "$WORK/docker.out"; then
+    bad "docker sandbox test crashed"; sed 's/^/      /' "$WORK/docker.out"
+else
+    while IFS= read -r line; do
+        case "$line" in
+            PASS\ *) ok "${line#PASS }";;
+            FAIL\ *) bad "${line#FAIL }";;
+        esac
+    done < "$WORK/docker.out"
+fi
+"$PY" "$MEASURE/slice_k_run.py" --sandbox docker --backend ollama --model m --dry-run \
+    | grep -q "only the agent's shell" \
+    && ok "dry-run describes the docker sandbox (loop + model on the host)" \
+    || bad "dry-run missing the docker sandbox note"
+
+# Opt-in (BH_TEST_DOCKER=1): builds an image with apt, so it is kept out of the
+# default CI run (whose runners happen to have Docker) to keep totals stable.
+if [ "${BH_TEST_DOCKER:-0}" = 1 ] && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    BH_CRACKME_SECRET="$FLAG" bash "$MEASURE/docker_run.sh" --mock > "$WORK/dock.txt" 2>&1 \
+        && ok "real docker: docker_run.sh --mock completed" \
+        || { bad "real docker: docker_run.sh --mock failed"; sed 's/^/      /' "$WORK/dock.txt"; }
+    grep -q "baseline CRACKED | hardened not cracked" "$WORK/dock.txt" \
+        && ok "real docker: baseline CRACKED, hardened NOT (verified vs the seal)" \
+        || bad "real docker: wrong crack outcome"
+    NET="$(docker run --rm --network none --cap-drop ALL blue-harness-arena \
+        python3 -c "import socket
+try:
+    socket.create_connection(('1.1.1.1', 53), timeout=3); print('NET-OPEN')
+except OSError: print('NET-BLOCKED')" 2>&1)"
+    [ "$NET" = "NET-BLOCKED" ] && ok "real docker: arena container has no network" \
+        || bad "real docker: arena container reached the network ($NET)"
+    rm -rf "$BD"
+else
+    skip "(H) real docker end-to-end — set BH_TEST_DOCKER=1 on a host with Docker"
+    skip "(H) real docker crack outcome — no Docker daemon"
+    skip "(H) real docker no-network probe — no Docker daemon"
 fi
 
 rm -rf "$BD"   # keep the tree clean
