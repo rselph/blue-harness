@@ -47,6 +47,51 @@ plain JSON text (background + citations:
 `research/findings/2026-11-13-local-model-tool-calling.md`). It downloads no model;
 `TARGET` is only the endpoint you point it at, and this is meant to run in the VM.
 
+### Docker on a Mac (no VM)
+
+If you have Docker (e.g. Docker Desktop on an Apple-Silicon Mac) you can skip the
+VM. Run this **on the host**, with Ollama serving your model there as usual:
+
+```bash
+make slice-k-docker-mock                       # plumbing check, no model
+BH_CRACKME_SECRET='CARA{your-own-flag}' \
+  make slice-k-docker MODEL=<your-model> RUNS=3
+```
+
+**How the isolation works.** An agent has a *brain* (the model) and *hands* (the
+shell commands it emits). Only the hands touch the target, so only the hands are
+sandboxed:
+- The agent loop and the model stay on the host. The loop talks to Ollama on
+  `127.0.0.1:11434`, so there's no tunnel.
+- Each command runs via `docker exec` in a fresh container per variant (and per
+  run), started with `--network none --cap-drop ALL --read-only
+  --security-opt no-new-privileges`, a pids/memory limit, and a non-root `agent`
+  user. The driver refuses to start if `docker inspect` doesn't report
+  `NetworkMode=none`.
+- Each container receives **exactly one binary**. The repo, `SEAL.json`, the
+  honey-ledger, your home directory and the flag never enter it. Scoring happens on
+  the host.
+- Because the container never needs the LLM port, it gets **no network at all**:
+  no gateway and no allowlist to get wrong. This also closes the gap the plain
+  `slice-k-run` has (an agent running as your user could read files by absolute
+  path).
+- The ELF pair is built in a separate throwaway, network-less *builder* container.
+  macOS `cc` produces Mach-O, so it can't be used. The builder is never the
+  attacker.
+
+**Limits:**
+- A container shares a kernel, so its boundary is weaker than a VM's hypervisor.
+  On a Mac, Docker Desktop runs containers inside its own Linux VM, which helps.
+- The model process isn't sandboxed, but it only ever receives text.
+- If you need an attacker tool that must call the model *from inside* the sandbox
+  (`rea`/Codex), this mode doesn't fit. You'd need an `--internal` network plus a
+  forwarder that allowlists `/api/chat` only, because Ollama's `/api/pull` and
+  `/api/create` would otherwise give the agent a route to the internet. Use the VM
+  path for that.
+
+Self-test on the host: `BH_TEST_DOCKER=1 bash harness/verify/test_slice_s.sh` also
+runs the real-Docker checks, including a probe proving the arena has no network.
+
 > **Honesty.** A real run's numbers require **your** isolated VM, **your** chosen
 > model, and **your** hardware — the same gating class as everything below. We never
 > fabricate numbers; absent figures print as *not measured*. To exercise the whole

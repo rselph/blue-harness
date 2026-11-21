@@ -49,7 +49,8 @@ No external dependencies: a C toolchain, `make`, and Python 3.
 > only way to test the layers our small run never reached. It is now **one command** —
 > `make slice-k-run MODEL=<your-model> RUNS=3` builds the sealed pair, drives the agent, and
 > prints the honest before/after (and we fixed the tool-call friction that blocked
-> commodity local models). Five-minute guide:
+> commodity local models). No VM? On a Mac with Docker, `make slice-k-docker`
+> runs the same thing in network-less containers. Five-minute guide:
 > [**docs/HOW-WE-TESTED.md**](docs/HOW-WE-TESTED.md).
 
 ## What it is
@@ -115,7 +116,7 @@ hardening — with its tier and bypass, every time.
   decoy non-mapped segment + honeytokens). All three formats auto-detected, all
   three with a post-build harden path.
 - One-command `harden`, the driving Claude skill, and a **CI gate that re-proves
-  every defense fires on each push** (379 checks green).
+  every defense fires on each push** (392 checks green).
 - An empirical harness (digest-sealed CrackMe + honest scorer), **one measured
   before/after run**, and a **one-command re-run** (`make slice-k-run`) with a
   robust tool-call shim so a commodity local model can actually drive it.
@@ -182,7 +183,7 @@ exhaustion, honeytoken poisoning) as its own, mechanism-proven countermeasures. 
 
 **Active.** All three native formats audited with magic-byte dispatch and each with
 a post-build harden path; mechanism-proven countermeasures across ELF/PE/Mach-O; a
-one-command `harden`; a CI gate with **379/379 checks green**
+one-command `harden`; a CI gate with **392/392 checks green**
 ([`make verify`](.github/workflows/verify.yml) on every push and pull
 request — the badge above is that gate); and a digest-sealed CrackMe with an honest
 empirical scorer, now driven by a **one-command re-run** (`make slice-k-run`).
