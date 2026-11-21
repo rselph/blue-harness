@@ -56,3 +56,49 @@ jobs:
 
       - name: make verify
         run: make verify
+
+  # --------------------------------------------------------------------------
+  # NOTE TO THE REPO OWNER — optional ARM64 job (disabled; uncomment to enable)
+  #
+  # The job above only proves the harness on x86-64. Several tests reach into
+  # machine code (e.g. Slice D's tamper step patches an instruction's
+  # immediate), and the encoding differs per architecture: on AArch64 a 32-bit
+  # constant is split across movz/movk, so an x86-only byte search silently
+  # finds nothing. That exact bug lived on main, green in CI, until a run on an
+  # Apple-Silicon Linux VM caught it (fixed in d92e429).
+  #
+  # Enable this if you want:
+  #   - arm64 regressions caught in CI rather than on a contributor's machine
+  #     (Apple Silicon dev boxes / Linux VMs, Graviton, Raspberry Pi, and most
+  #     Android/iOS native code — Track B — is arm64);
+  #   - the README's "every defense fires" claim to hold on both architectures.
+  # Cost: one extra job per push/PR. `ubuntu-24.04-arm` runners are free for
+  # public repositories; private repos may need a paid/larger-runner plan.
+  # Remember to update the README/badge wording if you turn it on.
+  # --------------------------------------------------------------------------
+  # verify-arm64:
+  #   name: make verify (arm64)
+  #   runs-on: ubuntu-24.04-arm
+  #   steps:
+  #     - name: Check out the repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Record the toolchain blue-harness is being proven against
+  #       run: |
+  #         set -eux
+  #         uname -m
+  #         cc --version | head -1
+  #         make --version | head -1
+  #         python3 --version
+  #
+  #     - name: Install gdb (enables Slice A's under-tracer detection branch)
+  #       run: |
+  #         set -eux
+  #         sudo apt-get update
+  #         sudo apt-get install -y --no-install-recommends gdb
+  #
+  #     - name: Allow a sibling to ptrace the baseline (Slice A control)
+  #       run: sudo sysctl -w kernel.yama.ptrace_scope=0 || true
+  #
+  #     - name: make verify
+  #       run: make verify
