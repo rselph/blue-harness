@@ -34,9 +34,26 @@ before/after diff:
 Run it:
 
 ```bash
-make verify     # every slice test, one posture summary → 392/392
+make verify     # every slice test, one posture summary → 393/393
 make demo       # audit a sample build, show its plan, then prove every defense fires
 ```
+
+**`make verify` is Linux-only, by decision.** The countermeasures it proves are
+Linux-native (`sys/prctl.h`, ELF tooling, `ptrace`), so most slices cannot build
+on macOS — host `cc` emits Mach-O and the guard sources don't compile. We do not
+chase macOS support here; it would mean faking the thing under test. On a Mac,
+run it in a container or let CI do it:
+
+```bash
+# one-off, in the Slice-K arena image (gcc + binutils + python3 already in it)
+docker build -q -t blue-harness-arena harness/measure/docker
+docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp \
+    -v "$PWD":/src -w /src blue-harness-arena make verify
+```
+
+Measured 2026-11-21 on an Apple-Silicon Mac: **393 checks, PASS=393, FAIL=0,
+SKIP=3** (the 3 skips are the opt-in real-Docker checks in Slice S, which need
+`BH_TEST_DOCKER=1` and a daemon the container doesn't have).
 
 This is enforced in CI (`.github/workflows/verify.yml`) on every push and pull
 request — the badge in the README is that gate. **What Layer 1 does _not_ prove:**
@@ -194,6 +211,11 @@ sandboxed:
 
 Self-test on the host: `BH_TEST_DOCKER=1 bash harness/verify/test_slice_s.sh` also
 runs the real-Docker checks, including a probe proving the arena has no network.
+Measured on a Mac 2026-11-21: `PASS=38 FAIL=0 SKIP=17`. The 17 skips are the
+build-gated sections (C/D/G) — they need an ELF pair, which host `cc` won't
+produce, so they are Linux/container-only like `make verify` above. The Docker
+path here sandboxes the *measurement* run; it is not a way to verify the harness
+on a Mac.
 
 ## Test it with a bigger model (help wanted)
 
