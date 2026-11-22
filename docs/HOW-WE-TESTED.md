@@ -34,7 +34,7 @@ before/after diff:
 Run it:
 
 ```bash
-make verify     # every slice test, one posture summary → 393/393
+make verify     # every slice test, one posture summary → 400/400
 make demo       # audit a sample build, show its plan, then prove every defense fires
 ```
 
@@ -51,7 +51,7 @@ docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp \
     -v "$PWD":/src -w /src blue-harness-arena make verify
 ```
 
-Measured 2026-11-21 on an Apple-Silicon Mac: **393 checks, PASS=393, FAIL=0,
+Measured 2026-11-22 on an Apple-Silicon Mac: **400 checks, PASS=400, FAIL=0,
 SKIP=3** (the 3 skips are the opt-in real-Docker checks in Slice S, which need
 `BH_TEST_DOCKER=1` and a daemon the container doesn't have).
 
