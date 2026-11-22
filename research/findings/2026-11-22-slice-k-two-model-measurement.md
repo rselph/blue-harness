@@ -165,12 +165,12 @@ This is why the numbers are trustworthy.
   `BackendError`, `stopped=context_exhausted|backend_error` with data preserved, and
   `peak_prompt_tokens` recorded. Also clears stale `run-NN/` from an out-dir so two
   builds never mix.
-- `b2e2ace` — `extract_final_answer` mis-scored a markdown answer: a qwen3.5:122b
+- `f5c7716` (first pushed as `b2e2ace`; same tree, message rewritten — see Flag hygiene) — `extract_final_answer` mis-scored a markdown answer: a qwen3.5:122b
   **baseline** crack in markdown-bold form captured the trailing `**` and was
   recorded as not cracked. That is a false negative that **flatters the defense**.
   `FLAG="x"` and `` FLAG=`x` `` forms previously matched nothing. Fixed; 7
-  regression cases in `harness/verify/test_slice_s.sh`; `make verify` 393 -> 400.
-- Mis-scoring audit (Lead, 2026-11-22, after `b2e2ace`): across all 40 run records
+  regression cases in `harness/verify/test_slice_s.sh`; `make verify` 393 -> 400 (Mac/container count; CI reports 398, see HOW-WE-TESTED.md).
+- Mis-scoring audit (Lead, 2026-11-22, after `f5c7716`): across all 40 run records
   (20 per dataset), **0** `recovered_secret` values were markdown-mangled (stripping
   emphasis/quotes/backticks never turned a non-crack into a crack); every hardened
   non-cracking run claimed **no flag at all**; per-run `report.json` cracked flags
@@ -211,7 +211,7 @@ commit has been pushed to `origin`. Consequences, honestly:
 **Remediation applied (operator-authorized, 2026-11-22).** The commit message was
 rewritten to describe the markdown bug with an illustrative `**FLAG=CARA{...}**`
 instead of the live secret, and the branch was force-pushed. `b2e2ace` became
-`f5c7716`; `origin/slice-k-run-isolation` is now `e7518ed`. All three trees are
+`f5c7716`; `origin/slice-k-run-isolation` was then `e7518ed`. All three trees are
 byte-identical to the pre-rewrite chain and a `git diff --stat` across the rewrite is
 empty, so no file content changed — only the message. The flag now appears in no
 commit message and no committed content reachable from any branch.
@@ -228,15 +228,15 @@ unreachable object. Therefore:
 - Residual exposure is nonetheless low: no `SEAL.json` was ever committed on any ref,
   and `sha256(flag)` appears nowhere in the tree, so nothing published corresponds to
   this secret. It unlocks only a retired local build.
-- The safety branch `backup-pre-msg-rewrite` still points at the pre-rewrite chain and
-  should be deleted once the operator is satisfied with the rewritten history.
+- The safety branch `backup-pre-msg-rewrite` (local only, never pushed) was deleted
+  2026-11-22 after confirming its trees are identical to the rewritten chain.
 
 ## Decisions needed from operator
 - ~~**Flag-hygiene breach in commit `b2e2ace`.**~~ **Resolved 2026-11-22:** message
   rewritten and force-pushed (see "Remediation applied"). Two follow-ons remain: the
-  orphaned object still exposes the flag via the GitHub API, so clearing it needs a
-  GitHub Support request if the operator wants it gone; and this sealed build is
-  retired either way.
+  orphaned object still exposes the flag via the GitHub API; the operator judged the
+  secret low-risk (it unlocks only a retired local build) and chose **not** to file a
+  GitHub Support purge. This sealed build is retired either way.
 - Whether to spend compute on a budget-unconstrained, non-amnesiac run (needs an
   attacker that manages its own context; 60 -> 200 steps on this agent is confounded).
 - Whether to fund a pruning-attacker variant (the named bypass) before any
@@ -255,7 +255,7 @@ unreachable object. Therefore:
 - `~/blue-harness-runs/2026-11-21-steps60/` — dataset A, qwen3-coder-next:q8_0 — 2026-11-21 (not in repo; contains the flag)
 - `~/blue-harness-runs/2026-11-22-qwen122b-steps60/` — dataset B, qwen3.5:122b — 2026-11-22 (not in repo; contains the flag)
 - `~/blue-harness-runs/2026-11-22-steps200-PARTIAL-killed/` — qualitative only — 2026-11-22
-- Commits: `fe983ec`, `171e71b`, `b2e2ace`
+- Commits: `fe983ec`, `171e71b`, `f5c7716` (orphaned original: `b2e2ace`)
 - `research/findings/2026-11-11-slice-k-empirical-run.md` — the N=1 predecessor
 - `research/findings/2026-11-13-local-model-tool-calling.md` — Slice S shim background
 
