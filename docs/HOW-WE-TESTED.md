@@ -55,6 +55,12 @@ Measured 2026-11-22 on an Apple-Silicon Mac: **400 checks, PASS=400, FAIL=0,
 SKIP=3** (the 3 skips are the opt-in real-Docker checks in Slice S, which need
 `BH_TEST_DOCKER=1` and a daemon the container doesn't have).
 
+CI (the GitHub `ubuntu` runner) reports **398 checks, PASS=398, FAIL=0, SKIP=4**.
+The difference is Slice A: the runner's `core_pattern` pipes crashes to a
+handler, so the two real-core-file checks become one skip and Slice A falls
+back to its mechanism proof (`dumpable=0 rlimit_core=0`). Both totals are
+correct for their environment; the README badge is the CI number.
+
 This is enforced in CI (`.github/workflows/verify.yml`) on every push and pull
 request — the badge in the README is that gate. **What Layer 1 does _not_ prove:**
 that a defense can't be *bypassed*. Each one still ships a named bypass and an

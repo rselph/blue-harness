@@ -126,7 +126,7 @@ hardening — with its tier and bypass, every time.
   decoy non-mapped segment + honeytokens). All three formats auto-detected, all
   three with a post-build harden path.
 - One-command `harden`, the driving Claude skill, and a **CI gate that re-proves
-  every defense fires on each push** (400 checks green).
+  every defense fires on each push** (398 checks green in CI).
 - An empirical harness (digest-sealed CrackMe + honest scorer), **one measured
   before/after run**, and a **one-command re-run** (`make slice-k-run`) with a
   robust tool-call shim so a commodity local model can actually drive it.
@@ -193,7 +193,7 @@ exhaustion, honeytoken poisoning) as its own, mechanism-proven countermeasures. 
 
 **Active.** All three native formats audited with magic-byte dispatch and each with
 a post-build harden path; mechanism-proven countermeasures across ELF/PE/Mach-O; a
-one-command `harden`; a CI gate with **400/400 checks green**
+one-command `harden`; a CI gate with **398/398 checks green**
 ([`make verify`](.github/workflows/verify.yml) on every push and pull
 request — the badge above is that gate); and a digest-sealed CrackMe with an honest
 empirical scorer, now driven by a **one-command re-run** (`make slice-k-run`).
