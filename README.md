@@ -127,8 +127,8 @@ hardening — with its tier and bypass, every time.
   three with a post-build harden path.
 - One-command `harden`, the driving Claude skill, and a **CI gate that re-proves
   every defense fires on each push** (398 checks green in CI).
-- An empirical harness (digest-sealed CrackMe + honest scorer), **one measured
-  before/after run**, and a **one-command re-run** (`make slice-k-run`) with a
+- An empirical harness (digest-sealed CrackMe + honest scorer), a **measured
+  before/after (N=10 per model, two local models)**, and a **one-command re-run** (`make slice-k-run`) with a
   robust tool-call shim so a commodity local model can actually drive it.
 
 **Not done yet**
@@ -137,8 +137,8 @@ hardening — with its tier and bypass, every time.
   non-mapped segment + honeytokens); relink flags and string-encryption **codegen**
   still need a rebuild, and runtime checks need a Windows / Mac host to verify.
 - **Mobile app reach** — Android native libraries via JNI, iOS app internals.
-- **More measurement** — the before/after is a single run from a small local model
-  (the red box at the top).
+- **More measurement** — the before/after is N=10 per model from two local
+  open-weight models at a 60-step budget (the red box at the top).
 
 **Next, in order**
 1. More measurement against **bigger / reliably tool-calling attackers** — the

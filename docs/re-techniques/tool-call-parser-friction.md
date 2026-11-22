@@ -36,7 +36,7 @@ must not credit it to the hardening, and must not rely on it.
 ## Harness hooks
 - Audit check(s) this maps to: none (not a property of the build).
 - Hardening(s) this maps to: none. Measurement rule instead: such failures are
-  recorded as `stopped=backend_error` with data preserved (commit `171e71b`), never
+  recorded as `stopped=backend_error` with data preserved (commit `532336b`), never
   counted as a defense effect or a clean "resisted."
 - Relevance: the P0 "one-sentence crack" skill floor has real friction at the lowest
   tier today. Do not plan around it; it is a tooling-maturity gap, not a barrier.
