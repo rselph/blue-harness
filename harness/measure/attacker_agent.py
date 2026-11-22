@@ -430,6 +430,10 @@ def run_agent(backend, binary, task=DEFAULT_TASK, cwd=None, max_steps=20,
     tokens = None
     steps = 0
     recovered = None
+    # HONESTY: distinguish "the agent finished" from "we cut it off". A run that
+    # hits the step cap is NOT a give-up, and 'not cracked' must not be read as
+    # one. Overwritten below unless the loop runs out of steps.
+    stopped = "step_cap"
     start = time.time()
 
     for steps in range(1, max_steps + 1):
@@ -455,6 +459,9 @@ def run_agent(backend, binary, task=DEFAULT_TASK, cwd=None, max_steps=20,
         final = extract_final_answer(reply)
         if final is not None:
             recovered = final
+            stopped = "final_answer"
+        else:
+            stopped = "no_tool_call"
         break
 
     wall = round(time.time() - start, 2)
@@ -469,5 +476,7 @@ def run_agent(backend, binary, task=DEFAULT_TASK, cwd=None, max_steps=20,
         "recovered_secret": recovered,
         "transcript": transcript,
         "steps": steps,
+        "max_steps": max_steps,
+        "stopped": stopped,        # final_answer | no_tool_call | step_cap
         "measurement_grade": getattr(backend, "grade", "unknown"),
     }

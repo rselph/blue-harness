@@ -9,6 +9,7 @@
 BIN ?= harness/sample/sample_dev
 TARGET ?= http://127.0.0.1:11434
 RUNS ?= 1
+STEPS ?= 20
 CRACKME_BUILD := harness/crackme/build
 
 .PHONY: demo verify audit audit-pe audit-macho audit-mobile report harden harden-pe harden-macho harden-mobile harden-apk harden-ipa \
@@ -95,11 +96,11 @@ endif
 # runs in a fresh --network none container holding only the target binary.
 slice-k-docker:
 ifeq ($(strip $(MODEL)),)
-	@echo "Usage: make slice-k-docker MODEL=<model> [TARGET=http://127.0.0.1:11434] [RUNS=N]"
+	@echo "Usage: make slice-k-docker MODEL=<model> [TARGET=http://127.0.0.1:11434] [RUNS=N] [STEPS=N]"
 	@echo "  Runs on the host with Docker. Plumbing check, no model: make slice-k-docker-mock"
 	@exit 2
 else
-	@bash harness/measure/docker_run.sh --model "$(MODEL)" --target "$(TARGET)" --runs "$(RUNS)"
+	@bash harness/measure/docker_run.sh --model "$(MODEL)" --target "$(TARGET)" --runs "$(RUNS)" --max-steps "$(STEPS)"
 endif
 
 slice-k-docker-mock:
