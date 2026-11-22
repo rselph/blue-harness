@@ -191,8 +191,9 @@ Baseline transcripts and `run_*.json` contain the plaintext flag. This note and 
 companions deliberately reference the flag only by its SEAL digest prefix
 `a952aac62857f823` (len 22). Keep the datasets out of the repo.
 
-**Known breach (found by the Lead 2026-11-22, not yet remediated):** the message of
-commit `b2e2ace` quotes the qwen3.5:122b baseline answer verbatim as the worked
+**Known breach (found by the Lead 2026-11-22; branch remediated, object still exposed
+— see "Remediation applied" below):** the message of the commit originally pushed as
+`b2e2ace` quotes the qwen3.5:122b baseline answer verbatim as the worked
 example of the markdown bug, and the Lead confirmed by hashing that the quoted string
 *is* the plaintext of the build these two datasets were measured against (its SHA-256
 equals the SEAL digest above). The branch `slice-k-run-isolation` carrying that
@@ -206,15 +207,36 @@ commit has been pushed to `origin`. Consequences, honestly:
   *third-party* run: the digest is now trivially reversible from git history, so this
   build must never be reused for a scored run, and its `SEAL.json` should not be
   published as "plaintext not published."
-- Remediation is an operator decision (see below): rewrite the commit message and
-  force-push the unmerged branch, or accept the leak, retire the build, and re-seal
-  with a fresh flag before any publication.
+
+**Remediation applied (operator-authorized, 2026-11-22).** The commit message was
+rewritten to describe the markdown bug with an illustrative `**FLAG=CARA{...}**`
+instead of the live secret, and the branch was force-pushed. `b2e2ace` became
+`f5c7716`; `origin/slice-k-run-isolation` is now `e7518ed`. All three trees are
+byte-identical to the pre-rewrite chain and a `git diff --stat` across the rewrite is
+empty, so no file content changed — only the message. The flag now appears in no
+commit message and no committed content reachable from any branch.
+
+**What the rewrite did NOT fix — verified, not assumed.** A force-push unlinks a
+commit from branch history; it does not erase the object. The orphaned commit was
+re-fetched from the GitHub API by SHA after the push and **still returns the message
+containing the plaintext flag.** Only GitHub Support can force collection of an
+unreachable object. Therefore:
+- **This flag is burned.** It must never be reused for a sealed or scored build, and
+  this build's `SEAL.json` must never be published as "plaintext not published." That
+  conclusion is unchanged by the rewrite, which is why the rewrite is hygiene and not
+  a fix.
+- Residual exposure is nonetheless low: no `SEAL.json` was ever committed on any ref,
+  and `sha256(flag)` appears nowhere in the tree, so nothing published corresponds to
+  this secret. It unlocks only a retired local build.
+- The safety branch `backup-pre-msg-rewrite` still points at the pre-rewrite chain and
+  should be deleted once the operator is satisfied with the rewritten history.
 
 ## Decisions needed from operator
-- **Flag-hygiene breach in commit `b2e2ace` (see "Flag hygiene").** Either rewrite
-  that commit message (the branch is pushed but unmerged, so a force-push is
-  possible) or accept the leak and retire this sealed build for any future scored or
-  published run. The Lead recommends the rewrite before merge.
+- ~~**Flag-hygiene breach in commit `b2e2ace`.**~~ **Resolved 2026-11-22:** message
+  rewritten and force-pushed (see "Remediation applied"). Two follow-ons remain: the
+  orphaned object still exposes the flag via the GitHub API, so clearing it needs a
+  GitHub Support request if the operator wants it gone; and this sealed build is
+  retired either way.
 - Whether to spend compute on a budget-unconstrained, non-amnesiac run (needs an
   attacker that manages its own context; 60 -> 200 steps on this agent is confounded).
 - Whether to fund a pruning-attacker variant (the named bypass) before any
