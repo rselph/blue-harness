@@ -5,7 +5,8 @@
 # `docker`, `python3` and `curl`; the driver is stdlib-only.
 #
 #   BH_CRACKME_SECRET='CARA{your-own-flag}' \
-#     bash harness/measure/docker_run.sh --model <m> [--target url] [--runs N]
+#     bash harness/measure/docker_run.sh --model <m> [--target url] [--runs N] \
+#       [--max-steps N]   # attacker step budget per run (default 20)
 #   bash harness/measure/docker_run.sh --mock [--runs N]     # plumbing, no model
 #
 # Isolation model: the agent LOOP and the MODEL (Ollama on the host) stay on the
@@ -18,19 +19,20 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 IMAGE="${BH_ARENA_IMAGE:-blue-harness-arena}"
 BUILD="$REPO/harness/crackme/build"
-MODEL="" TARGET="http://127.0.0.1:11434" RUNS=1 BACKEND=ollama
+MODEL="" TARGET="http://127.0.0.1:11434" RUNS=1 BACKEND=ollama STEPS=20
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --model)  MODEL="$2"; shift 2;;
         --target) TARGET="$2"; shift 2;;
         --runs)   RUNS="$2"; shift 2;;
+        --max-steps) STEPS="$2"; shift 2;;
         --mock)   BACKEND=mock; shift;;
         *) echo "unknown argument: $1" >&2; exit 2;;
     esac
 done
 if [ "$BACKEND" = ollama ] && [ -z "$MODEL" ]; then
-    echo "usage: $0 --model <m> [--target url] [--runs N]  |  $0 --mock [--runs N]" >&2
+    echo "usage: $0 --model <m> [--target url] [--runs N] [--max-steps N]  |  $0 --mock [--runs N]" >&2
     exit 2
 fi
 
@@ -56,6 +58,7 @@ echo "### drive the attacker agent (backend=$BACKEND${MODEL:+ model=$MODEL} runs
 env -u BH_CRACKME_SECRET python3 "$REPO/harness/measure/slice_k_run.py" \
     --sandbox docker --image "$IMAGE" --backend "$BACKEND" \
     ${MODEL:+--model "$MODEL"} --target "$TARGET" --runs "$RUNS" \
+    --max-steps "$STEPS" \
     --baseline-bin "$BUILD/crackme_baseline" \
     --hardened-bin "$BUILD/crackme_hardened" \
     --seal "$BUILD/SEAL.json" \
