@@ -306,6 +306,20 @@ def run_shell(command, cwd=None, timeout=60, max_output=8192, env=None,
 # --------------------------------------------------------------------------- #
 #  BACKENDS
 # --------------------------------------------------------------------------- #
+class BackendError(RuntimeError):
+    """The attacker's own model/backend failed mid-run.
+
+    This is a RESULT, not a harness crash: an agent whose context window fills
+    up (or whose server errors) has stopped being able to attack. run_agent
+    records it as a terminal outcome and the run is scored normally, so an
+    N-run sweep is never destroyed by one failing leg."""
+
+    def __init__(self, message, status=None, detail=None):
+        super().__init__(message)
+        self.status = status
+        self.detail = (detail or "")[:2000]
+
+
 class OllamaBackend:
     """The operator's LOCAL model, via Ollama's /api/chat. OPERATOR-GATED.
 
@@ -329,8 +343,21 @@ class OllamaBackend:
         req = urllib.request.Request(
             self.endpoint + "/api/chat", data=data,
             headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-            body = json.loads(resp.read().decode())
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                body = json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            # Surface the server's own words: Ollama answers 500 (rather than
+            # truncating) once the conversation exceeds n_ctx, which is exactly
+            # the context-exhaustion outcome we want recorded, not swallowed.
+            try:
+                detail = e.read().decode("utf-8", "replace")
+            except Exception:
+                detail = ""
+            raise BackendError(f"HTTP {e.code} from {self.endpoint}/api/chat",
+                               status=e.code, detail=detail) from e
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            raise BackendError(f"{type(e).__name__}: {e}") from e
         msg = body.get("message", {}) or {}
         usage = None
         pin = body.get("prompt_eval_count")
@@ -338,7 +365,10 @@ class OllamaBackend:
         if pin is not None or pout is not None:
             usage = (pin or 0) + (pout or 0)
         return {"content": msg.get("content", ""),
-                "tool_calls": msg.get("tool_calls"), "usage": usage}
+                "tool_calls": msg.get("tool_calls"), "usage": usage,
+                # The PROMPT side alone is the agent's context occupancy — the
+                # quantity that runs into the window. Tracked as a peak.
+                "prompt_tokens": pin}
 
 
 class MockBackend:
@@ -434,12 +464,31 @@ def run_agent(backend, binary, task=DEFAULT_TASK, cwd=None, max_steps=20,
     # hits the step cap is NOT a give-up, and 'not cracked' must not be read as
     # one. Overwritten below unless the loop runs out of steps.
     stopped = "step_cap"
+    error_detail = None
+    peak_prompt_tokens = None
     start = time.time()
 
     for steps in range(1, max_steps + 1):
-        reply = backend.chat(messages, tools=_TOOL_SPEC)
+        try:
+            reply = backend.chat(messages, tools=_TOOL_SPEC)
+        except BackendError as e:
+            # The ATTACKER's backend died. Record it as the run's outcome and
+            # keep every measurement gathered so far: a context window that
+            # fills up is a finding, not a lost run.
+            blob = f"{e} {e.detail}".lower()
+            stopped = ("context_exhausted"
+                       if any(k in blob for k in
+                              ("context", "n_ctx", "too long", "too large",
+                               "exceed", "token limit"))
+                       else "backend_error")
+            error_detail = f"{e}" + (f" | {e.detail.strip()}" if e.detail else "")
+            steps -= 1          # this step produced no model turn
+            break
         if reply.get("usage") is not None:
             tokens = (tokens or 0) + reply["usage"]
+        pt = reply.get("prompt_tokens")
+        if pt is not None:
+            peak_prompt_tokens = max(peak_prompt_tokens or 0, pt)
         content = reply.get("content", "") or ""
         messages.append({"role": "assistant", "content": content,
                          **({"tool_calls": reply["tool_calls"]}
@@ -477,6 +526,9 @@ def run_agent(backend, binary, task=DEFAULT_TASK, cwd=None, max_steps=20,
         "transcript": transcript,
         "steps": steps,
         "max_steps": max_steps,
-        "stopped": stopped,        # final_answer | no_tool_call | step_cap
+        # final_answer | no_tool_call | step_cap | context_exhausted | backend_error
+        "stopped": stopped,
+        "error_detail": error_detail,
+        "peak_prompt_tokens": peak_prompt_tokens,
         "measurement_grade": getattr(backend, "grade", "unknown"),
     }

@@ -286,6 +286,23 @@ def main(argv=None):
     if a.runs < 1:
         ap.error("--runs must be >= 1")
     os.makedirs(a.out_dir, exist_ok=True)
+
+    # Clear a PREVIOUS invocation's run-NN/ + summary.json out of this out-dir.
+    # An aborted sweep otherwise leaves artifacts that look complete but were
+    # scored against a different sealed build — archive before you re-run.
+    stale = sorted(d for d in os.listdir(a.out_dir)
+                   if len(d) == 6 and d.startswith("run-") and d[4:].isdigit()
+                   and os.path.isdir(os.path.join(a.out_dir, d)))
+    if stale or os.path.exists(os.path.join(a.out_dir, "summary.json")):
+        print(f"  NOTE: clearing {len(stale)} stale run-NN/ dir(s) + summary.json "
+              f"from {a.out_dir}")
+        for d in stale:
+            shutil.rmtree(os.path.join(a.out_dir, d), ignore_errors=True)
+        try:
+            os.remove(os.path.join(a.out_dir, "summary.json"))
+        except FileNotFoundError:
+            pass
+
     with open(a.seal) as f:
         seal = json.load(f)
 
