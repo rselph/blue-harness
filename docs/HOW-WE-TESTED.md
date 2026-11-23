@@ -34,7 +34,7 @@ before/after diff:
 Run it:
 
 ```bash
-make verify     # every slice test, one posture summary → 400/400
+make verify     # every slice test, one posture summary → 401/401
 make demo       # audit a sample build, show its plan, then prove every defense fires
 ```
 
@@ -51,11 +51,11 @@ docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp \
     -v "$PWD":/src -w /src blue-harness-arena make verify
 ```
 
-Measured 2026-11-22 on an Apple-Silicon Mac: **400 checks, PASS=400, FAIL=0,
+Measured 2026-11-22 on an Apple-Silicon Mac: **401 checks, PASS=401, FAIL=0,
 SKIP=3** (the 3 skips are the opt-in real-Docker checks in Slice S, which need
 `BH_TEST_DOCKER=1` and a daemon the container doesn't have).
 
-CI (the GitHub `ubuntu` runner) reports **398 checks, PASS=398, FAIL=0, SKIP=4**.
+CI (the GitHub `ubuntu` runner) reports **399 checks, PASS=399, FAIL=0, SKIP=4**.
 The difference is Slice A: the runner's `core_pattern` pipes crashes to a
 handler, so the two real-core-file checks become one skip and Slice A falls
 back to its mechanism proof (`dumpable=0 rlimit_core=0`). Both totals are

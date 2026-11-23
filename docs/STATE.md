@@ -5,7 +5,7 @@
 > pass work between chats without dumping context. Keep it short and current.
 
 - Last updated: 2026-11-22
-- Phase: **Research ✅ → Analysis ✅ → Implementation (Slices A–S ✅) → Testing ✅ (**400/400** across Slices A–U via `make verify`, enforced in CI) → all three native formats audited; ELF/PE/Mach-O all have a post-build harden path (Mach-O at depth — strip + decoy segment + honeytokens); mobile containers (APK/AAB/IPA) reach into their native payloads; the empirical re-run is a one-command, scored, operator-runnable procedure (Slice S); open items are operator decisions (below)**
+- Phase: **Research ✅ → Analysis ✅ → Implementation (Slices A–S ✅) → Testing ✅ (**399/399** across Slices A–U via `make verify` in CI; 401 in the Linux container on a Mac, see HOW-WE-TESTED) → all three native formats audited; ELF/PE/Mach-O all have a post-build harden path (Mach-O at depth — strip + decoy segment + honeytokens); mobile containers (APK/AAB/IPA) reach into their native payloads; the empirical re-run is a one-command, scored, operator-runnable procedure (Slice S); open items are operator decisions (below)**
 - **2026-11-22 — two-model Slice-K measurement done (N=10 x 2, same sealed build, Docker, 60-step budget):**
   baseline cracked 9/10 (qwen3-coder-next q8_0) and 10/10 (qwen3.5:122b); hardened cracked 1/10 for both,
   right-censored (9/10 and 8/10 at the cap), so cost is a lower bound. Writeup:
