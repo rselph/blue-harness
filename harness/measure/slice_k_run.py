@@ -235,13 +235,15 @@ def main(argv=None):
         print(_render_summary(summary))
     report = reports[0]
 
-    # Honesty banner — always, and un-missable for a mock.
-    print()
+    # Honesty banner — always, and un-missable for a mock. Under --json it goes to
+    # stderr so stdout stays parseable; the JSON itself carries measurement_grade.
+    out = sys.stderr if a.json else sys.stdout
+    print(file=out)
     if report["measurement_grade"] == "mock":
-        print("  *** MOCK RUN — NOT A MEASUREMENT ***")
-        print("  This proved the pipeline plumbing with a scripted brain over real")
-        print("  tools and the real binaries. It yields NO cost numbers by design.")
-    print("  " + _GATING)
+        print("  *** MOCK RUN — NOT A MEASUREMENT ***", file=out)
+        print("  This proved the pipeline plumbing with a scripted brain over real", file=out)
+        print("  tools and the real binaries. It yields NO cost numbers by design.", file=out)
+    print("  " + _GATING, file=out)
     return 0
 
 

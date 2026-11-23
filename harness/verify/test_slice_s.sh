@@ -175,9 +175,18 @@ import json,sys
 r=json.load(open(sys.argv[1]))
 sys.exit(0 if r.get("measurement_grade")=="mock" and r.get("tokens") is None and r.get("wall_clock_s") is None else 1)
 PY4
+    "$PY" "$MEASURE/slice_k_run.py" --backend mock --json \
+        --baseline-bin "$BASE" --hardened-bin "$HARD" \
+        --seal "$SEAL" --ledger "$LEDGER" --out-dir "$WORK/out_json" \
+        > "$WORK/json.out" 2> "$WORK/json.err" \
+        && "$PY" -c 'import json,sys; json.load(open(sys.argv[1]))' "$WORK/json.out" \
+        && grep -q "NOT A MEASUREMENT" "$WORK/json.err" \
+        && ok "--json: stdout is pure JSON; the NOT A MEASUREMENT banner moves to stderr" \
+        || bad "--json stdout is not parseable JSON, or the banner was dropped"
 else
     skip "(D) NOT-A-MEASUREMENT mark — build-gated"; skip "(D) no fabricated multiplier — build-gated"
     skip "(D) real-run gating — build-gated"; skip "(D) honest run-JSON stamp — build-gated"
+    skip "(D) --json stays parseable — build-gated"
 fi
 
 # --------------------------------------------------------------------------- #
